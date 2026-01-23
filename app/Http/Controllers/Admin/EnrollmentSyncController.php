@@ -3,54 +3,44 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\EnrollmentApi\AlumniSyncService;
 use App\Models\KsuEnrollmentSyncLog;
-use App\Services\EnrollmentSyncService;
 use Illuminate\Http\Request;
 
 class EnrollmentSyncController extends Controller
 {
-    public function __construct(private readonly EnrollmentSyncService $sync)
+    protected $syncService;
+
+    // Inject the service
+    public function __construct(AlumniSyncService $syncService)
     {
+        $this->syncService = $syncService;
     }
 
     public function index()
     {
-        $tenantId = function_exists('getTenantId') ? getTenantId() : null;
-
-        $q = KsuEnrollmentSyncLog::query();
-        if (!is_null($tenantId)) {
-            $q->where('tenant_id', $tenantId);
-        }
-
-        $latestLog = $q->latest('id')->first();
-
+        $latestLog = KsuEnrollmentSyncLog::latest()->first();
         return view('admin.enrollment_sync.index', compact('latestLog'));
     }
 
+    // MATCHING ROUTE: This must be 'run'
+  // MATCHING ROUTE: This must be 'run'
     public function run(Request $request)
     {
-        $log = $this->sync->run();
-
-        $payload = [
-            'status' => 'success',
-            'message' => 'Sync complete (inserted: ' . $log->inserted . ', updated: ' . $log->updated . ', failed: ' . $log->failed . ').',
-            'log' => [
-                'id' => $log->id,
-                'started_at' => optional($log->started_at)->toDateTimeString(),
-                'finished_at' => optional($log->finished_at)->toDateTimeString(),
-                'inserted' => $log->inserted,
-                'updated' => $log->updated,
-                'failed' => $log->failed,
-                'error_summary' => $log->error_summary,
-            ],
-        ];
-
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json($payload);
+        try {
+            $count = $this->syncService->syncGraduatedStudents();
+            
+            // FIX: Return JSON so the button understands the success
+            return response()->json([
+                'success' => true, 
+                'message' => $count . ' Graduates successfully synced.'
+            ]);
+        } catch (\Exception $e) {
+            // FIX: Return JSON error so the button shows the real reason
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        return redirect()
-            ->route('admin.enrollment_sync.index')
-            ->with('success', $payload['message']);
     }
 }

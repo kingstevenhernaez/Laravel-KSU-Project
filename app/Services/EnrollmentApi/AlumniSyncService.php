@@ -1,117 +1,85 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\EnrollmentApi;
 
 use App\Models\KsuAlumniRecord;
 use App\Models\KsuEnrollmentSyncLog;
-use App\Services\EnrollmentApi\EnrollmentApiClient;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
-class EnrollmentSyncService
+class AlumniSyncService
 {
-    public function __construct(private readonly EnrollmentApiClient $client)
+    protected $baseUrl;
+    protected $apiKey;
+
+    public function __construct()
     {
+        $this->baseUrl = env('KSU_ENROLLMENT_API_BASE_URL');
+        $this->apiKey = env('KSU_ENROLLMENT_API_KEY');
     }
 
-    /**
-     * Runs the enrollment sync:
-     * - Pulls records from the Mock Enrollment API
-     * - Upserts into ksu_alumni_records (tenant scoped when tenant is active)
-     * - Logs result to ksu_enrollment_sync_logs
-     */
-    public function run(): KsuEnrollmentSyncLog
+    public function syncGraduatedStudents()
     {
-        $tenantId = function_exists('getTenantId') ? getTenantId() : null;
+        // 1. Call the API
+        $response = Http::withHeaders(['X-API-KEY' => $this->apiKey])
+            ->timeout(5)
+            ->get("{$this->baseUrl}/graduates");
 
-        $log = KsuEnrollmentSyncLog::create([
-            'tenant_id' => $tenantId,
-            'started_at' => Carbon::now(),
-            'inserted' => 0,
-            'updated' => 0,
-            'failed' => 0,
-            'error_summary' => null,
-            'meta' => [],
-        ]);
-
-        $inserted = 0;
-        $updated  = 0;
-        $failed   = 0;
-        $errors   = [];
-
-        try {
-            $rows = $this->client->fetchGraduates();
-
-            DB::transaction(function () use ($rows, $tenantId, &$inserted, &$updated, &$failed, &$errors) {
-                foreach ($rows as $i => $row) {
-                    try {
-                        $studentNumber = trim((string) ($row['student_number'] ?? ''));
-                        if ($studentNumber === '') {
-                            throw new \RuntimeException('Missing student_number');
-                        }
-
-                        $payload = [
-                            'tenant_id' => $tenantId,
-                            'student_number' => $studentNumber,
-                            'first_name' => trim((string) ($row['first_name'] ?? '')),
-                            'middle_name' => trim((string) ($row['middle_name'] ?? '')),
-                            'last_name' => trim((string) ($row['last_name'] ?? '')),
-                            'program_name' => trim((string) ($row['program_name'] ?? '')),
-                            'program_code' => trim((string) ($row['program_code'] ?? '')),
-                            'graduation_year' => (int) ($row['graduation_year'] ?? null),
-                        ];
-
-                        // Tenant-aware lookup
-                        $query = KsuAlumniRecord::query()->where('student_number', $studentNumber);
-                        if (!is_null($tenantId)) {
-                            $query->where('tenant_id', $tenantId);
-                        }
-
-                        $existing = $query->first();
-
-                        if ($existing) {
-                            $existing->fill($payload);
-                            $dirty = $existing->isDirty();
-                            $existing->save();
-
-                            if ($dirty) {
-                                $updated++;
-                            }
-                        } else {
-                            KsuAlumniRecord::create($payload);
-                            $inserted++;
-                        }
-                    } catch (\Throwable $e) {
-                        $failed++;
-                        $errors[] = 'Row #' . ($i + 1) . ': ' . $e->getMessage();
-                    }
-                }
-            });
-        } catch (\Throwable $e) {
-            $failed++;
-            $errors[] = $e->getMessage();
+        if ($response->failed()) {
+            throw new \Exception("Connection Failed: " . $response->status());
         }
 
-        $log->update([
-            'finished_at' => Carbon::now(),
-            'inserted' => $inserted,
-            'updated' => $updated,
-            'failed' => $failed,
-            'error_summary' => $this->firstLines($errors, 6),
-            'meta' => [
-                'error_count' => count($errors),
-            ],
+        $json = $response->json();
+        
+        // Open the "data" wrapper if it exists
+        $students = isset($json['data']) ? $json['data'] : $json;
+
+        $count = 0;
+
+        foreach ($students as $studentData) {
+            // FIX 1: The Mock App uses 'student_number', not 'student_id'
+            $studentId = $studentData['student_number'] ?? $studentData['student_id'] ?? null;
+
+            // If we still can't find an ID, skip this row
+            if (!$studentId) continue;
+
+            KsuAlumniRecord::updateOrCreate(
+                ['student_number' => $studentId],
+                [
+                    'first_name'      => $studentData['first_name'],
+                    'last_name'       => $studentData['last_name'],
+                    'email'           => $studentData['email'],
+                    'birthdate'       => $studentData['birthdate'],
+                    
+                    // FIX 2: Map 'year_graduated' correctly
+                    'graduation_year' => $studentData['year_graduated'] ?? $studentData['year'] ?? null,
+                    
+                    // FIX 3: Map 'college_name' to department
+                    'department_code' => $studentData['college_name'] ?? $studentData['dept'] ?? 'N/A',
+                    
+                    'tenant_id'       => 1, 
+                ]
+            );
+            $count++;
+        }
+
+        KsuEnrollmentSyncLog::create([
+            'synced_count' => $count,
+            'status'       => 'success',
+            'tenant_id'    => 1,
         ]);
 
-        return $log;
+        return $count;
     }
 
-    private function firstLines(array $errors, int $maxLines = 5): ?string
+    public function updateJobInEnrollment($studentId, $jobData)
     {
-        if (!$errors) {
-            return null;
-        }
-        $slice = array_slice($errors, 0, $maxLines);
-        return implode("\n", $slice);
+        return Http::withHeaders(['X-API-KEY' => $this->apiKey])
+             ->post("{$this->baseUrl}/update-job", [
+                'student_id' => $studentId, // Note: Ensure this matches your endpoint expectation if you use it later
+                'company' => $jobData['company'],
+                'position' => $jobData['position'],
+                'start_date' => $jobData['start_date'],
+            ])->successful();
     }
 }

@@ -2,72 +2,77 @@
 
 namespace App\Services\EnrollmentApi;
 
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
+use App\Models\KsuAlumniRecord;
+use App\Models\KsuEnrollmentSyncLog;
+use Illuminate\Support\Facades\Log;
 
-class EnrollmentApiClient
+class AlumniSyncService
 {
-    public function __construct(
-        private readonly ?string $baseUrl = null,
-        private readonly ?string $apiKey = null,
-        private readonly int $timeout = 20,
-    ) {}
+    protected $client;
+
+    public function __construct(EnrollmentApiClient $client)
+    {
+        $this->client = $client;
+    }
 
     /**
-     * Fetch graduates from the mock enrollment API.
-     *
-     * The reference Mock Enrollment ZIP uses:
-     * - Endpoint: GET /api/graduates
-     * - Header:  X-API-Key: <secret>
+     * PULL: Sync graduated students from Mock Enrollment to Alumni System.
      */
-    public function fetchGraduates(): array
+    public function syncGraduatedStudents()
     {
-        $base = $this->baseUrl ?? config('services.enrollment_api.base_url');
-        $key  = $this->apiKey  ?? config('services.enrollment_api.key');
-        $timeout = $this->timeout ?: (int) config('services.enrollment_api.timeout', 20);
+        // 1. Fetch data from Mock API
+        $students = $this->client->getGraduatedStudents();
 
-        if (!$base) {
-            throw new \RuntimeException('ENROLLMENT_API_BASE_URL is not configured.');
-        }
-        if (!$key) {
-            throw new \RuntimeException('ENROLLMENT_API_KEY is not configured.');
+        if (empty($students)) {
+            Log::info('No new graduates to sync.');
+            return 0;
         }
 
-        $base = rtrim($base, '/');
+        $count = 0;
+        foreach ($students as $data) {
+            // 2. Map and Save/Update Record
+            KsuAlumniRecord::updateOrCreate(
+                ['student_number' => $data['student_id']], // Unique ID
+                [
+                    'first_name'      => $data['first_name'],
+                    'last_name'       => $data['last_name'],
+                    'email'           => $data['email'],
+                    'birthdate'       => $data['birthdate'], // Format: YYYY-MM-DD
+                    'graduation_year' => $data['year'],
+                    'department_code' => $data['dept'],
+                    'tenant_id'       => getTenantId(),
+                ]
+            );
+            $count++;
+        }
 
-        // Allow either:
-        // - ENROLLMENT_API_BASE_URL=http://host:port (we call /api/graduates)
-        // - ENROLLMENT_API_BASE_URL=http://host:port/api (we call /graduates)
-        $endpoint = str_ends_with($base, '/api') ? ($base . '/graduates') : ($base . '/api/graduates');
+        // Log the activity
+        KsuEnrollmentSyncLog::create([
+            'synced_count' => $count,
+            'status'       => 'success',
+            'tenant_id'    => getTenantId(),
+        ]);
 
+        return $count;
+    }
+
+    /**
+     * PUSH: Automatically save Job History back to Mock Enrollment System.
+     */
+    public function updateJobInEnrollment($studentId, $jobData)
+    {
         try {
-            $response = Http::timeout($timeout)
-                ->withHeaders([
-                    'X-API-Key' => $key,
-                    'Accept' => 'application/json',
-                ])
-                ->get($endpoint);
-        } catch (ConnectionException $e) {
-            throw new \RuntimeException('Enrollment API connection failed: ' . $e->getMessage(), 0, $e);
-        }
-
-        if ($response->failed()) {
-            $msg = 'Enrollment API request failed with status ' . $response->status();
-            $body = $response->json();
-            if (is_array($body) && isset($body['message'])) {
-                $msg .= ': ' . $body['message'];
+            // Enrollment system ONLY accepts job updates
+            $response = $this->client->pushJobUpdate($studentId, $jobData);
+            
+            if ($response) {
+                Log::info("Job synced back to Mock Enrollment for student: {$studentId}");
+                return true;
             }
-            throw new \RuntimeException($msg);
+        } catch (\Exception $e) {
+            Log::error("Mock API Sync Failure: " . $e->getMessage());
         }
 
-        $payload = $response->json();
-
-        // Mock API shape:
-        // { "data": [ { student_number, first_name, ... } ] }
-        if (!is_array($payload) || !isset($payload['data']) || !is_array($payload['data'])) {
-            throw new \RuntimeException('Enrollment API response format is invalid.');
-        }
-
-        return $payload['data'];
+        return false;
     }
 }

@@ -2,32 +2,33 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class KsuAlumniRecord extends Model
 {
+    use HasFactory;
+
     protected $table = 'ksu_alumni_records';
 
+    // FIX: This list allows the data to be written to your database
     protected $fillable = [
         'tenant_id',
         'student_number',
         'first_name',
-        'middle_name',
         'last_name',
         'email',
-        'mobile',
-        'program_code',
-        'program_name',
-        'college_name',
+        'birthdate',
         'graduation_year',
-        'payload',
-        'claimed_at',
+        'department_code',
+        'program_code',
+        'mobile',
         'claimed_user_id',
-        'claim_status',
+        'claimed_at'
     ];
 
     protected $casts = [
-        'payload' => 'array',
+        'birthdate' => 'date',
         'claimed_at' => 'datetime',
     ];
 }

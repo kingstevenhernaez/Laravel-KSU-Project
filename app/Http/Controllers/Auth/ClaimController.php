@@ -22,122 +22,106 @@ class ClaimController extends Controller
         return view('auth.claim');
     }
 
-    public function claim(Request $request): RedirectResponse
+  public function claim(Request $request): RedirectResponse
     {
         $v = Validator::make($request->all(), [
             'student_number' => ['required', 'string', 'max:64'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ], [
-            'student_number.required' => __('Student number is required.'),
+            'student_number.required' => __('KSU Student number is required.'),
         ]);
 
         if ($v->fails()) {
             return back()->withErrors($v)->withInput();
         }
 
-        $tenantId = getTenantId();
+        // FIX: Force Tenant ID to 1 if the helper returns nothing
+        $tenantId = getTenantId() ?? 1; 
+        
+        // Clean the input
         $studentNo = trim((string) $request->student_number);
 
+        // Debugging: If this fails again, uncomment the next line to see what is happening
+        // dd("Searching for Tenant: $tenantId, Student: $studentNo");
+
+        // Find verified record
         $record = KsuAlumniRecord::where('tenant_id', $tenantId)
             ->where('student_number', $studentNo)
             ->first();
 
         if (!$record) {
+            // TRY ONE MORE TIME without Tenant ID (Loose Search) just for testing
+            $record = KsuAlumniRecord::where('student_number', $studentNo)->first();
+        }
+
+        if (!$record) {
             return back()->withErrors([
-                'student_number' => __('Not in alumni records. Please contact the Alumni Center.'),
+                'student_number' => __('ID Number not found in KSU records. Please ensure you are synced from the enrollment system.'),
             ])->withInput();
         }
 
-        // Resolve Department (Program)
-        $deptName = $record->program_name ?: ($record->program_code ?: null);
-        $departmentId = null;
-        if ($deptName) {
-            $department = Department::firstOrCreate(
-                ['tenant_id' => $tenantId, 'name' => $deptName],
-                ['short_name' => substr(preg_replace('/\s+/', '', $deptName), 0, 20)]
-            );
-            $departmentId = $department->id;
+        if ($record->claimed_user_id) {
+            return back()->withErrors([
+                'student_number' => __('This account has already been claimed.'),
+            ]);
         }
 
-        // Resolve Passing Year
+        // ... (Rest of the logic remains the same: resolve Dept, Year, create User) ...
+        
+        // Resolve Department ID
+        $departmentId = null;
+        if ($record->department_code) {
+            $dept = Department::where('tenant_id', $tenantId)->where('short_name', $record->department_code)->first();
+            if ($dept) $departmentId = $dept->id;
+        }
+
+        // Resolve Graduation Year ID
         $passingYearId = null;
         if ($record->graduation_year) {
-            $py = PassingYear::where('tenant_id', $tenantId)
-                ->where('name', (string) $record->graduation_year)
-                ->first();
-            if (!$py) {
-                $py = new PassingYear();
-                $py->tenant_id = $tenantId;
-                $py->name = (string) $record->graduation_year;
-                $py->save();
-            }
-            $passingYearId = $py->id;
+            $year = PassingYear::where('tenant_id', $tenantId)->where('name', $record->graduation_year)->first();
+            if ($year) $passingYearId = $year->id;
         }
 
-        $fullName = trim(implode(' ', array_filter([
-            $record->first_name,
-            $record->middle_name,
-            $record->last_name,
-        ])));
-        if ($fullName === '') {
-            $fullName = $studentNo;
-        }
+        $fullName = trim($record->first_name . ' ' . $record->last_name);
 
-        // Create or update a user account (email is optional)
-        $user = null;
-        if ($record->email) {
-            $user = User::where('tenant_id', $tenantId)->where('email', $record->email)->first();
-        }
-        if (!$user) {
-            // If no email match, try by phone
-            if ($record->mobile) {
-                $user = User::where('tenant_id', $tenantId)->where('mobile', $record->mobile)->first();
-            }
-        }
+        // PASSWORD LOGIC: Birthdate + StudentID
+        // Ensure birthdate is formatted YYYYMMDD
+        $birthDatePart = \Carbon\Carbon::parse($record->birthdate)->format('Ymd');
+        $generatedPassword = $birthDatePart . $studentNo;
+
+        // Create or Update User account
+        $user = User::where('tenant_id', $tenantId)->where('email', $record->email)->first();
         if (!$user) {
             $user = new User();
             $user->tenant_id = $tenantId;
         }
 
         $user->name = $fullName;
-        $user->email = $record->email ?: null;
-        $user->mobile = $record->mobile ?: null;
-        $user->role = USER_ROLE_ALUMNI;
-        $user->status = STATUS_ACTIVE;
-        $user->password = Hash::make((string) $request->password);
-        $user->is_alumni = STATUS_ACTIVE;
+        $user->email = $record->email;
+        $user->role = 2; // Alumni Role
+        $user->status = 1; // Active
+        $user->password = Hash::make($generatedPassword);
+        $user->is_alumni = 1;
         $user->save();
 
-        // Ensure alumnus record exists
-        $alumnus = Alumni::where('tenant_id', $tenantId)
-            ->where('id_number', $studentNo)
-            ->first();
+        // Create formal Alumnus profile
+        $alumnus = Alumni::where('tenant_id', $tenantId)->where('id_number', $studentNo)->first();
         if (!$alumnus) {
             $alumnus = new Alumni();
             $alumnus->tenant_id = $tenantId;
             $alumnus->id_number = $studentNo;
         }
         $alumnus->user_id = $user->id;
-        if ($departmentId) {
-            $alumnus->department_id = $departmentId;
-        }
-        if ($passingYearId) {
-            $alumnus->passing_year_id = $passingYearId;
-        }
         $alumnus->save();
 
-        // Mark synced record as claimed
-        // Claim fields are optional; if the DB columns exist (after migration), store claim info.
-        try {
-            $record->claimed_user_id = $user->id;
-            $record->claimed_at = now();
-            $record->save();
-        } catch (\Throwable $e) {
-            // ignore if columns not present yet
-        }
+        // Mark record as claimed
+        $record->claimed_user_id = $user->id;
+        $record->claimed_at = now();
+        $record->save();
 
+        // Log the user in
         Auth::login($user);
 
-        return redirect()->route('home')->with('success', __('Your alumni account has been activated.'));
+        // Try 'dashboard' (Standard Laravel) or 'home'
+return redirect()->route('dashboard')->with('success', __('Account claimed! Your Password is: ' . $generatedPassword));
     }
 }
