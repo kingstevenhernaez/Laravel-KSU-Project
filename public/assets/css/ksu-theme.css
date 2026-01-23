@@ -1,0 +1,97 @@
+:root {
+  --ksu-green: #0b3d2e;
+  --ksu-green-2: #0f4a37;
+  --ksu-gold: #d4af37;
+  --ksu-gold-2: #c9a227;
+}
+
+/* Header / Navbar */
+.navbar,
+.header-area,
+.app-header,
+.topbar {
+  background-color: var(--ksu-green) !important;
+}
+
+/* Sidebar */
+.sidebar,
+.sidebar-area,
+.sidebar-wrapper,
+.left-side-menu {
+  background-color: var(--ksu-green) !important;
+}
+
+/* Sidebar text colors */
+.sidebar a,
+.sidebar-area a,
+.sidebar-wrapper a,
+.left-side-menu a {
+  color: #eef6f2 !important;
+}
+
+.sidebar a:hover,
+.sidebar-area a:hover,
+.sidebar-wrapper a:hover,
+.left-side-menu a:hover {
+  color: var(--ksu-gold) !important;
+}
+
+/* Active menu highlight (best-effort across templates) */
+.sidebar .active > a,
+.sidebar-area .active > a,
+.sidebar-wrapper .active > a,
+.left-side-menu .active > a,
+.sidebar .mm-active > a,
+.sidebar-area .mm-active > a,
+.left-side-menu .mm-active > a {
+  background-color: rgba(212, 175, 55, 0.18) !important;
+  border-left: 3px solid var(--ksu-gold) !important;
+  color: var(--ksu-gold) !important;
+}
+
+/* Primary buttons */
+.btn-primary,
+.btn.btn-primary {
+  background-color: var(--ksu-green) !important;
+  border-color: var(--ksu-green) !important;
+}
+
+.btn-primary:hover,
+.btn.btn-primary:hover {
+  background-color: var(--ksu-green-2) !important;
+  border-color: var(--ksu-green-2) !important;
+}
+
+/* Secondary accent (gold) */
+.btn-warning,
+.badge-warning,
+.badge.bg-warning {
+  background-color: var(--ksu-gold) !important;
+  border-color: var(--ksu-gold) !important;
+  color: #1b1b1b !important;
+}
+
+/* Links */
+a {
+  color: var(--ksu-green) !important;
+}
+
+a:hover {
+  color: var(--ksu-green-2) !important;
+}
+
+/* Pagination active */
+.page-item.active .page-link {
+  background-color: var(--ksu-green) !important;
+  border-color: var(--ksu-green) !important;
+}
+
+/* Table header */
+.table thead th {
+  color: #1b1b1b;
+}
+
+/* Small gold highlight utility */
+.ksu-gold {
+  color: var(--ksu-gold) !important;
+}

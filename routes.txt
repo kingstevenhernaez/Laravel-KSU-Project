@@ -1,0 +1,21 @@
+
+   ReflectionException 
+
+  Class "App\Http\Controllers\addon\donation\frontend\DonationController" does not exist
+
+  at C:\laragon\www\ksu_alumni_management\vendor\laravel\framework\src\Illuminate\Foundation\Console\RouteListCommand.php:234
+    [90m230[0m[90m▕ [0m[35;1m            if ([0m[39;1m$this[0m[35;1m->[0m[39;1misFrameworkController[0m[35;1m([0m[39;1m$route[0m[35;1m)) {[0m
+    [90m231[0m[90m▕ [0m[35;1m                return [0m[39;1mfalse[0m[35;1m;[0m
+    [90m232[0m[90m▕ [0m[35;1m            }[0m
+    [90m233[0m[90m▕ [0m
+[31;1m  ➜ [0m[3;1m234[0m[90m▕ [0m[35;1m            [0m[39;1m$path [0m[35;1m= (new [0m[39;1mReflectionClass[0m[35;1m([0m[39;1m$route[0m[35;1m->[0m[39;1mgetControllerClass[0m[35;1m()))[0m
+    [90m235[0m[90m▕ [0m[35;1m                                ->[0m[39;1mgetFileName[0m[35;1m();[0m
+    [90m236[0m[90m▕ [0m[35;1m        } else {[0m
+    [90m237[0m[90m▕ [0m[35;1m            return [0m[39;1mfalse[0m[35;1m;[0m
+    [90m238[0m[90m▕ [0m[35;1m        }[0m
+
+  1   C:\laragon\www\ksu_alumni_management\vendor\laravel\framework\src\Illuminate\Foundation\Console\RouteListCommand.php:234
+      ReflectionClass::__construct("App\Http\Controllers\addon\donation\frontend\DonationController")
+
+  2   C:\laragon\www\ksu_alumni_management\vendor\laravel\framework\src\Illuminate\Foundation\Console\RouteListCommand.php:156
+      Illuminate\Foundation\Console\RouteListCommand::isVendorRoute(Object(Illuminate\Routing\Route))
