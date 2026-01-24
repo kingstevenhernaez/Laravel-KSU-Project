@@ -586,10 +586,10 @@
                                         </li>
                                         <li><a class="{{ $activeManageNews ?? '' }}"
                                                href="{{ route('admin.news.index') }}">{{ __('News') }}</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-                        @endcan
+                                </ul>
+</div>
+</li>
+@endif
                         @can('Manage Transaction')
                             <li>
                                 <a href="#manage-transaction-menu" data-bs-toggle="collapse" role="button"

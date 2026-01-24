@@ -137,3 +137,32 @@ if (file_exists($frontendRoutes)) {
         echo "<p>" . $e->getMessage() . "</p>";
     }
 });
+
+// --- TEMPORARY REPAIR TOOL ---
+use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use App\Models\User;
+
+Route::get('/repair-admin-menu', function () {
+    // 1. Clear the "Memory"
+    Artisan::call('cache:clear');
+    Artisan::call('permission:cache-reset');
+    
+    // 2. Ensure the Permission Exists
+    // (This is likely what the menu is checking for!)
+    Permission::firstOrCreate(['name' => 'menu_alumni']); 
+    Permission::firstOrCreate(['name' => 'view_alumni']);
+    
+    // 3. Find or Create the Super Admin Role
+    $role = Role::firstOrCreate(['name' => 'Super Admin']);
+    
+    // 4. Give the Role ALL Permissions
+    $role->givePermissionTo(Permission::all());
+    
+    // 5. Force-Assign to You
+    $admin = User::where('email', 'admin@ksu.edu.ph')->first();
+    $admin->assignRole($role);
+    
+    return "<h1>REPAIR COMPLETE</h1><p>Cache cleared. Permissions granted. <br>Go back to <a href='/admin/dashboard'>Dashboard</a> and check the menu.</p>";
+});
