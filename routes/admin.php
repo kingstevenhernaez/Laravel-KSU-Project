@@ -115,7 +115,10 @@ Route::group(['prefix' => 'moderators', 'as' => 'moderators.', 'middleware' => [
 // Manage moderator Route End
 
 // Manage Alumni Route Start
-Route::group(['prefix' => 'alumni', 'as' => 'alumni.', 'middleware' => ['can:Manage Alumni']], function () {
+Route::group(['prefix' => 'alumni', 'as' => 'alumni.', 'middleware' => ['can:Manage Alumni']], function ()
+ {
+    Route::get('sync-graduates', [\App\Http\Controllers\Admin\SyncAlumniController::class, 'syncGraduates'])->name('sync');
+    
     Route::get('list-search-with-filter', [AlumniController::class, 'alumniListWithAdvanceFilter'])->name('list-search-with-filter');
     Route::get('alumni-profile-edit/{id}', [AlumniController::class, 'alumniProfileData'])->name('profile-edit');
     Route::post('alumni-institution-store', [AlumniController::class, 'storeAlumniInstitution'])->name('institution-store');

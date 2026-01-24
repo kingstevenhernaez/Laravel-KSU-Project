@@ -20,34 +20,10 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'uuid',
-        'tenant_id',
-        'name',
-        'nick_name',
-        'email',
-        'mobile',
-        'email_verified_at',
-        'password',
-        'image',
-        'role',
-        'is_alumni',
-        'email_verification_status',
-        'phone_verification_status',
-        'google_auth_status',
-        'google2fa_secret',
-        'google_id',
-        'facebook_id',
-        'verify_token',
-        'otp',
-        'otp_expiry',
-        'show_email_in_public',
-        'show_phone_in_public',
-        'last_seen',
-        'created_by',
-        'status',
+ protected $fillable = [
+        'name', 'email', 'password', 'status', 'role', 
+        'is_alumni', 'tenant_id', 'uuid', 'email_verified_at', 'remember_token'
     ];
-
     /**
      * The attributes that should be hidden for serialization.
      *

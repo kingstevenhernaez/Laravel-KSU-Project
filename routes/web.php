@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\PublicAlumniDirectoryController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -70,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('google2fa.authenticate.enable');
     Route::post('google2fa/authenticate/disable', [GoogleAuthController::class, 'disable'])
         ->name('google2fa.authenticate.disable');
+
 });
 
 /**
