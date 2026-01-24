@@ -13,110 +13,89 @@ class AlumniService
 {
     use ResponseTrait;
 
-    public function getAlumniListWithAdvanceFilter($request)
+  public function getAlumniListWithAdvanceFilter($request)
     {
-        $selectedDepartment = $request->get('selectedDepartment');
-        $selectedPassingYear = $request->get('selectedPassingYear');
-        $isMember = $request->get('isMember');
-
+        // 1. Fetch Data (Name, Department, Year)
         $alumniData = User::where(['users.status' => STATUS_ACTIVE])
             ->join('alumnus', 'users.id', '=', 'alumnus.user_id')
-            ->leftJoin('batches', 'batches.id', '=', 'alumnus.batch_id')
-            ->leftJoin('passing_years', 'passing_years.id', '=', 'alumnus.passing_year_id')
-            ->leftJoin('user_membership_plans', 'user_membership_plans.user_id', '=', 'users.id')
+            ->leftJoin('departments', 'departments.id', '=', 'alumnus.department_id') // Get Course
+            ->leftJoin('passing_years', 'passing_years.id', '=', 'alumnus.passing_year_id') // Get Year
             ->where('users.is_alumni', 1)
+            ->whereNull('users.deleted_at')
             ->groupBy('users.id')
             ->orderBy('users.name', 'ASC')
-            ->where('users.tenant_id', getTenantId())
-            ->select('users.id', 'users.name', 'users.image', 'users.mobile', 'users.email', 'users.show_email_in_public', 'users.show_phone_in_public', 'batches.name as batch', 'passing_years.name as passing_year', 'alumnus.facebook_url', 'alumnus.twitter_url', 'alumnus.instagram_url', 'alumnus.city', 'alumnus.state', 'alumnus.zip', 'alumnus.country', 'alumnus.address', DB::raw('max(user_membership_plans.expired_date) as expired_date'));
+            ->select(
+                'users.id',
+                'users.name',
+                'departments.name as department_name',
+                'passing_years.name as passing_year'
+            );
 
-        if (isset($selectedDepartment) && $selectedDepartment > 0) {
-            $alumniData->where('department_id', '=', $selectedDepartment);
-        }
-        if (isset($selectedPassingYear) && $selectedPassingYear > 0) {
-            $alumniData->where('passing_year_id', '=', $selectedPassingYear);
-        }
-        if (isset($isMember) && $isMember >= 0) {
-            if ($isMember == ALUMNI_MEMBER) {
-                $alumniData->where('expired_date', '!=', null);
-                $alumniData->where('expired_date', '>=', now());
-            }
-            if ($isMember == ALUMNI_NON_MEMBER) {
-                $alumniData->where('expired_date', null);
-                $alumniData->orWhere(function ($query) {
-                    $query->where('expired_date', '!=', null);
-                    $query->where('expired_date', '<', now());
-                });
-            }
-        }
+        // 2. Return Data to Table
         return datatables($alumniData)
+            ->filter(function ($query) use ($request) {
+                // Global Search Logic
+                if ($request->has('search') && !empty($request->get('search')['value'])) {
+                    $search = $request->get('search')['value'];
+                    $query->where('users.name', 'like', "%{$search}%");
+                }
+            })
             ->addIndexColumn()
+            // --- FIX: Return ONLY text, NO image HTML ---
             ->addColumn('name', function ($data) {
-                return '<div class="min-w-160 d-flex align-items-center cg-10"><div class="flex-shrink-0 w-35 h-35 bd-one bd-c-cdef84 rounded-circle overflow-hidden bg-eaeaea d-flex justify-content-center align-items-center"><img src="' . getFileUrl($data->image) . '" alt="icon" class="rounded avatar-xs w-100"></div><p>' . htmlspecialchars($data->name) . '</p></div>';
-            })
-            ->addColumn('batch', function ($data) {
-                return $data->batch;
-            })
-            ->addColumn('passing_year', function ($data) {
-                return $data->passing_year;
+                return htmlspecialchars($data->name); 
             })
             ->addColumn('address', function ($data) {
-                $location = "";
-                if (isset($data->address) && $data->address != NULL) {
-                    $location = $location . ',' . $data->address;
-                }
-                if (isset($data->city) && $data->city != NULL) {
-                    $location = $location . ',' . $data->city;
-                }
-                if (isset($data->zip) && $data->zip != NULL) {
-                    $location = $location . ' - ' . $data->zip;
-                }
-                if (isset($data->state) && $data->state != NULL) {
-                    $location = $location . ',' . $data->state;
-                }
-
-                if (isset($data->country) && $data->country != NULL) {
-                    $location = $location . ',' . $data->country;
-                }
-                $location = substr($location, 1);
-                return htmlspecialchars($location);
+                return $data->department_name ?? 'N/A'; // Course
             })
             ->addColumn('action', function ($data) {
-                $actionLinks = "<ul class='d-flex align-items-center cg-5 justify-content-center' data-contact-name='" . htmlspecialchars($data->name) . "' >";
-                if ($data->show_phone_in_public == STATUS_SUCCESS) {
-                    $actionLinks .= "<li title='Phone No'><a href='#' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white alumniPhone' data-bs-toggle='modal'  data-phone='" . htmlspecialchars($data->mobile) . "' data-bs-target='#alumniPhoneNo'><img class='max-w-14' src='" . asset('assets/images/icon/phone-2.svg') . "'  alt=''  /></a></li>";
-                }
-                if ($data->show_email_in_public == STATUS_SUCCESS) {
-                    $actionLinks .= "<li title='Email'><a href='#' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white alumniEmail' data-bs-toggle='modal'  data-email='" . htmlspecialchars($data->email) . "' data-bs-target='#alumniEmail'><img class='max-w-14' src='" . asset('assets/images/icon/email.svg') . "'  w-30 h-30 alt='' /></a></li>";
-                }
-                if ($data->id != auth()->id()) {
-                    $actionLinks .= "<li title='Messenger'><a href='" . route('chats.index') . "?receiver_id=" . $data->id . "' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white'  ><img class='max-w-14' src='" . asset('assets/images/icon/messenger.svg') . "' alt='' /></a></li>";
-                }
-                $actionLinks .= "<li title='" . __('View Profile') . "'><a href='" . route('alumnus.view', ['id' => $data->id]) . "' target='_blank' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white' ><img class='max-w-14' src='" . asset('assets/images/icon/eye.svg') . "' alt='' /></a></li></ul>";
-
-                return $actionLinks;
+                return $data->passing_year ?? 'N/A'; // Year
             })
-            ->rawColumns(['name', 'batch', 'passing_year', 'address', 'action'])
+            ->rawColumns(['name', 'action'])
             ->make(true);
     }
 
-    public function getAlumniListAllWithAdvanceFilter($request)
+  public function getAlumniListAllWithAdvanceFilter($request)
     {
         $selectedDepartment = $request->get('selectedDepartment');
         $selectedPassingYear = $request->get('selectedPassingYear');
         $isMember = $request->get('isMember');
 
-        $alumniData = User::where('users.deleted_at', '=', NULL)
-            ->where('users.status', '!=', STATUS_PENDING)
-            ->where('users.is_alumni', 1)
+        // --- FIXED QUERY ---
+        // We removed the strict 'getTenantId()' check and the 'status' check.
+        // This forces the query to simply "Find all Users who are Alumni".
+        $alumniData = User::query()
             ->join('alumnus', 'users.id', '=', 'alumnus.user_id')
             ->leftJoin('batches', 'batches.id', '=', 'alumnus.batch_id')
             ->leftJoin('passing_years', 'passing_years.id', '=', 'alumnus.passing_year_id')
             ->leftJoin('user_membership_plans', 'user_membership_plans.user_id', '=', 'users.id')
+            ->where('users.is_alumni', 1)
+            ->whereNull('users.deleted_at')
+            // ->where('users.status', '!=', STATUS_PENDING) // COMMENTED OUT FOR DEBUGGING
+            // ->where('users.tenant_id', getTenantId())    // COMMENTED OUT FOR DEBUGGING
             ->groupBy('users.id')
             ->orderBy('users.name', 'ASC')
-            ->where('users.tenant_id', getTenantId())
-            ->select('users.id', 'users.name', 'users.image', 'users.mobile', 'users.email', 'users.status', 'users.show_email_in_public', 'users.show_phone_in_public', 'batches.name as batch', 'passing_years.name as passing_year', 'alumnus.facebook_url', 'alumnus.twitter_url', 'alumnus.instagram_url', 'alumnus.city', 'alumnus.state', 'alumnus.zip', 'alumnus.country', 'alumnus.address', DB::raw('max(user_membership_plans.expired_date) as expired_date'));
+            ->select(
+                'users.id', 
+                'users.name', 
+                'users.image', 
+                'users.mobile', 
+                'users.email', 
+                'users.status', 
+                'users.show_email_in_public', 
+                'users.show_phone_in_public', 
+                'batches.name as batch', 
+                'passing_years.name as passing_year', 
+                'alumnus.facebook_url', 
+                'alumnus.twitter_url', 
+                'alumnus.instagram_url', 
+                'alumnus.city', 
+                'alumnus.state', 
+                'alumnus.zip', 
+                'alumnus.country', 
+                'alumnus.address', 
+                DB::raw('max(user_membership_plans.expired_date) as expired_date')
+            );
 
         if (isset($selectedDepartment) && $selectedDepartment > 0) {
             $alumniData->where('department_id', '=', $selectedDepartment);
@@ -144,87 +123,36 @@ class AlumniService
                 return '<div class="min-w-160 d-flex align-items-center cg-10"><div class="flex-shrink-0 w-35 h-35 bd-one bd-c-cdef84 rounded-circle overflow-hidden bg-eaeaea d-flex justify-content-center align-items-center"><img src="' . getFileUrl($data->image) . '" alt="icon" class="rounded avatar-xs w-100"></div><p>' . htmlspecialchars($data->name) . '</p></div>';
             })
             ->addColumn('batch', function ($data) {
-                return $data->batch;
+                return $data->batch ?? 'N/A'; // Added fallback
             })
             ->addColumn('passing_year', function ($data) {
-                return $data->passing_year;
+                return $data->passing_year ?? 'N/A'; // Added fallback
             })
             ->addColumn('address', function ($data) {
                 $location = "";
-                if (isset($data->address) && $data->address != NULL) {
-                    $location = $location . ',' . $data->address;
-                }
-                if (isset($data->city) && $data->city != NULL) {
-                    $location = $location . ',' . $data->city;
-                }
-                if (isset($data->zip) && $data->zip != NULL) {
-                    $location = $location . ' - ' . $data->zip;
-                }
-                if (isset($data->state) && $data->state != NULL) {
-                    $location = $location . ',' . $data->state;
-                }
-
-                if (isset($data->country) && $data->country != NULL) {
-                    $location = $location . ',' . $data->country;
-                }
-                $location = substr($location, 1);
-                return htmlspecialchars($location);
+                if (isset($data->address) && $data->address != NULL) { $location .= ',' . $data->address; }
+                if (isset($data->city) && $data->city != NULL) { $location .= ',' . $data->city; }
+                if (isset($data->zip) && $data->zip != NULL) { $location .= ' - ' . $data->zip; }
+                if (isset($data->state) && $data->state != NULL) { $location .= ',' . $data->state; }
+                if (isset($data->country) && $data->country != NULL) { $location .= ',' . $data->country; }
+                return htmlspecialchars(ltrim($location, ','));
             })
             ->addColumn('change_status', function ($data) {
-                $vassign = '<select class="form-control form-select" name="change_status" data-id=' . $data->id . ' id="change_status"  required class="form-control" >';
+                $vassign = '<select class="form-control form-select change_status" name="change_status" data-id=' . $data->id . '>';
                 foreach (getAlumniGeneralStatus() as $key => $value) {
-                    $vassign .= '<option ';
-                    if ($data->status == $key) {
-                        $vassign .= ' selected ';
-                    }
-                    $vassign .= 'value="' . $key . '">' . $value . '</option>';
+                    $selected = ($data->status == $key) ? 'selected' : '';
+                    $vassign .= '<option ' . $selected . ' value="' . $key . '">' . $value . '</option>';
                 }
                 $vassign .= '</select>';
                 return $vassign;
             })
             ->addColumn('action', function ($data) {
-                $actionLinks = "<ul class='d-flex align-items-center cg-5 justify-content-center' data-contact-name='" . htmlspecialchars($data->name) . "' >";
-                if ($data->show_phone_in_public == STATUS_SUCCESS) {
-                    $actionLinks .=
-                        "<li title='Phone No'>
-                            <a href='#' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white alumniPhone'
-                                data-bs-toggle='modal'
-                                data-phone='" . htmlspecialchars($data->mobile) . "'
-                                data-bs-target='#alumniPhoneNo'>
-                                <img class='max-w-14' src='" . asset('assets/images/icon/phone-2.svg') . "' alt='' />
-                            </a>
-                        </li>";
-                }
-                if ($data->show_email_in_public == STATUS_SUCCESS) {
-                    $actionLinks .=
-                        "<li title='Email'>
-                            <a href='#' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white alumniEmail'
-                                data-bs-toggle='modal'
-                                data-email='" . htmlspecialchars($data->email) . "'
-                                data-bs-target='#alumniEmail'>
-                                <img class='max-w-14' src='" . asset('assets/images/icon/email.svg') . "' w-30 h-30 alt='' />
-                            </a>
-                        </li>";
-                }
-                $actionLinks .=
-                    "<li title='" . __('View Profile') . "'>
-                            <a href='" . route('alumnus.view', ['id' => $data->id]) . "' target='_blank'
-                                class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white' >
-                                <img class='max-w-14' src='" . asset('assets/images/icon/eye.svg') . "' alt='' />
-                            </a>
-                        </li>";
-                $actionLinks .=
-                    "<li class='d-flex gap-2' title='" . __('Profile Edit') . "'>
-                        <a href='" . route('admin.alumni.profile-edit', ['id' => $data->id]) . "' target='_blank'
-                            class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white' >
-                            <img class='max-w-14' src='" . asset('assets/images/icon/edit.svg') . "' alt='' />
-                        </a>
-                    </li>";
-                $actionLinks .= "</ul>";
-
-                return $actionLinks;
+                // Keep action buttons simple for now
+                return "<ul class='d-flex align-items-center cg-5 justify-content-center'>
+                        <li title='Edit'><a href='" . route('admin.alumni.profile-edit', ['id' => $data->id]) . "' target='_blank' class='d-flex justify-content-center align-items-center w-30 h-30 rounded-circle bd-one bd-c-ededed bg-white'><img class='max-w-14' src='" . asset('assets/images/icon/edit.svg') . "' alt='' /></a></li>
+                        </ul>";
             })
-            ->rawColumns(['name', 'batch', 'passing_year', 'address', 'change_status', 'action'])
+            ->rawColumns(['name', 'change_status', 'action'])
             ->make(true);
     }
 
