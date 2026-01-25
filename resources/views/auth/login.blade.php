@@ -6,157 +6,173 @@
 
 @section('content')
 <style>
-    /* 1. Global Page Background */
+    /* =========================================
+       KSU OFFICIAL LOGIN THEME (FINAL FIX)
+       ========================================= */
+    
     body {
-        background-color: #f4f7f6 !important;
+        background-color: #f0f2f5 !important;
+    }
+    .register-area {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 40px 20px;
+    }
+    .register-wrap {
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #fff;
+        max-width: 1000px;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
     }
 
-    /* 2. Left Side Branding (KSU Green) */
+    /* --- LEFT SIDE: THE BUILDING BACKGROUND --- */
     .register-left {
-        background-color: #006400 !important; /* KSU Green */
+        /* 1. We FORCE the background image here */
+        background-image: url('{{ asset("frontend/images/gallery/ksu-alumni-building.png") }}') !important;
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        
         position: relative;
+        width: 45%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        text-align: center;
+        min-height: 550px;
     }
-
-    /* Overlay to make text readable if there is a background image */
+    
+    /* 2. The Green Tint Overlay (Essential for reading text over the photo) */
     .register-left::before {
         content: "";
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 100, 0, 0.85); /* Green Tint */
+        /* Semi-transparent KSU Green */
+        background: rgba(11, 61, 46, 0.85); 
         z-index: 1;
     }
-
+    
     .register-left-wrap {
         position: relative;
         z-index: 2;
+        width: 100%;
     }
 
-    /* 3. Primary Button (KSU Gold) */
+    /* --- RIGHT SIDE: THE FORM --- */
+    .register-right {
+        width: 55%;
+        padding: 50px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
     .primary-btn {
-        background-color: #FFD700 !important; /* KSU Gold */
-        border: 1px solid #FFD700 !important;
-        color: #006400 !important; /* Green Text */
-        font-weight: 700 !important;
+        background-color: #FFC72C !important;
+        border: 2px solid #FFC72C !important;
+        color: #0B3D2E !important;
+        font-weight: 800 !important;
         text-transform: uppercase;
-        transition: all 0.3s ease;
+        letter-spacing: 0.5px;
+        border-radius: 8px;
+        height: 50px;
+        width: 100%;
+        transition: 0.3s;
     }
-
     .primary-btn:hover {
-        background-color: #004d00 !important; /* Darker Green */
-        border-color: #004d00 !important;
-        color: #FFD700 !important; /* Gold Text */
+        background-color: #fff !important;
+        color: #0B3D2E !important;
     }
 
-    /* 4. Outline/Claim Account Button */
     .outline-btn {
         background-color: transparent !important;
-        border: 2px solid #006400 !important;
-        color: #006400 !important;
-        font-weight: 600;
+        border: 2px solid #0B3D2E !important;
+        color: #0B3D2E !important;
     }
-
     .outline-btn:hover {
-        background-color: #006400 !important;
+        background-color: #0B3D2E !important;
         color: #ffffff !important;
     }
 
-    /* 5. Input Focus Colors */
+    .form-control {
+        height: 50px;
+        border-radius: 8px;
+        border: 1px solid #e1e1e1;
+    }
     .form-control:focus {
-        border-color: #006400 !important;
-        box-shadow: 0 0 0 0.2rem rgba(0, 100, 0, 0.15) !important;
+        border-color: #FFC72C !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 199, 44, 0.2) !important;
     }
 
-    /* 6. Typography */
-    .primary-form h4 {
-        color: #006400; /* Green Heading */
-        font-weight: 700;
-    }
-
-    .text-primary {
-        color: #006400 !important; /* Links in Green */
+    @media (max-width: 991px) {
+        .register-left, .register-right { width: 100%; }
+        .register-left { min-height: 250px; }
     }
 </style>
 
 <div class="register-area">
     <div class="register-wrap">
-        <div class="register-left section-bg-img"
-             style="background-image: url({{ getSettingImage('login_left_image') }})">
+        
+        <div class="register-left">
             <div class="register-left-wrap">
-                <a class="d-inline-block mb-26" href="{{ route('index') }}">
-                    <img src="{{ getSettingImage('app_logo') }}" alt="{{ getOption('app_name') }}" style="max-height: 80px;" />
+                <a class="d-inline-block mb-4" href="{{ route('index') }}">
+                    <img src="{{ asset('images/ksu-logo.png') }}" 
+                         alt="KSU Logo" 
+                         style="max-height: 120px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));" />
                 </a>
-                <h2 class="text-white fw-500 mb-15">{{ __('Kalinga State University') }}</h2>
-                <p class="text-white">{{ __('Dedicated to Service, Character, and Excellence.') }}</p>
+
+                <h3 class="text-white fw-bold mb-3 text-uppercase" style="letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    KSU ALUMNI CENTER
+                </h3>
+                <p class="text-white-50 fs-16" style="max-width: 80%; margin: 0 auto;">
+                    {{ __('Dedicated to Service, Character, and Excellence.') }}
+                </p>
             </div>
         </div>
 
         <div class="register-right">
             <div class="primary-form">
-                <div class="title mb-30">
-                    <h4>{{ __('Alumni Portal Login') }}</h4>
-                    <p class="mt-2 text-muted">{{ __('Sign in to access your records and connect with fellow KSU alumni.') }}</p>
+                <div class="title mb-4">
+                    <h4 style="color:#0B3D2E; font-weight:800;">{{ __('Welcome Back!') }}</h4>
+                    <p class="text-muted">{{ __('Sign in to access your alumni dashboard.') }}</p>
                 </div>
-
-                @if (getOption('google_login_status') == 1 || getOption('facebook_login_status') == 1)
-                    <div class="social-login mb-20">
-                        @if (getOption('google_login_status') == 1)
-                            <a href="{{ route('login.google') }}" class="social-btn google-btn mb-10">
-                                <img src="{{ asset('assets/images/google.svg') }}" alt="Google" />
-                                <span>{{ __('Login with Google') }}</span>
-                            </a>
-                        @endif
-                        @if (getOption('facebook_login_status') == 1)
-                            <a href="{{ route('login.facebook') }}" class="social-btn facebook-btn">
-                                <img src="{{ asset('assets/images/facebook.svg') }}" alt="Facebook" />
-                                <span>{{ __('Login with Facebook') }}</span>
-                            </a>
-                        @endif
-                    </div>
-                    <div class="divider mb-20"><span>{{ __('Or login with email') }}</span></div>
-                @endif
 
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
-
-                    <div class="form-group mb-15">
-                        <label class="form-label text-dark">{{ __('Email Address') }}</label>
-                        <input type="email" name="email" value="{{ old('email') }}" class="form-control" placeholder="example@ksu.edu.ph" required autofocus>
-                        @error('email')
-                            <span class="text-danger small mt-1">{{ $message }}</span>
-                        @enderror
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold text-dark">{{ __('Email Address') }}</label>
+                        <input type="email" name="email" class="form-control" placeholder="example@ksu.edu.ph" required autofocus>
                     </div>
 
-                    <div class="form-group mb-15">
-                        <label class="form-label text-dark">{{ __('Password') }}</label>
-                        <input type="password" name="password" class="form-control" placeholder="********" required>
-                        @error('password')
-                            <span class="text-danger small mt-1">{{ $message }}</span>
-                        @enderror
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold text-dark">{{ __('Password') }}</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-25">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                            <label class="form-check-label small" for="remember">{{ __('Remember Me') }}</label>
+                            <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                            <label class="form-check-label small text-muted" for="remember">{{ __('Remember Me') }}</label>
                         </div>
-                        @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="small text-primary fw-bold">{{ __('Forgot Password?') }}</a>
-                        @endif
                     </div>
 
-                    <div class="form-group mb-20">
-                        <button type="submit" class="primary-btn w-100 py-12">{{ __('Sign In') }}</button>
-                    </div>
+                    <button type="submit" class="primary-btn">{{ __('Sign In') }}</button>
                 </form>
 
-                <div class="text-center mt-30 pt-20 border-top">
-                    <p class="mb-10 fw-500">{{ __("First time here?") }}</p>
-                    <a href="{{ route('claim.show') }}" class="primary-btn outline-btn w-100">
-                        <i class="fa fa-user-check me-2"></i> {{ __('Claim KSU Alumni Account') }}
+                <div class="text-center mt-5 pt-4 border-top">
+                    <p class="mb-3 fw-600 text-muted">{{ __("Don't have an account yet?") }}</p>
+                    <a href="{{ route('claim.show') }}" class="primary-btn outline-btn d-flex align-items-center justify-content-center">
+                        {{ __('Claim KSU Alumni Account') }}
                     </a>
-                    <p class="small text-muted mt-10">
-                        {{ __('Verified KSU graduates can activate their portal access here.') }}
-                    </p>
                 </div>
             </div>
         </div>
