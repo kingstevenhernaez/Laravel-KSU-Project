@@ -68,11 +68,29 @@
             </button>
         </div>
 
-        <a href="{{ route('home') }}" class="d-flex align-items-center">
-            <img src="{{ asset('images/ksu-logo.png') }}" alt="KSU Logo" style="height: 50px; width: auto;">
-            <div class="d-none d-md-block mx-3" style="width: 2px; height: 35px; background-color: #FFD700;"></div>
-            <img src="{{ asset('images/ksu-alumni-logo.png') }}" alt="Alumni Logo" class="d-none d-sm-block" style="height: 45px; width: auto;">
-        </a>
+       <a href="{{ route('home') }}" class="d-flex align-items-center">
+    @php
+        // 1. Get the logo ID from your dashboard "Logo Settings"
+        $logoId = getOption('app_logo'); 
+        // 2. Convert that ID into a real URL so the website can show it
+        $logoUrl = $logoId ? getFileUrl($logoId) : asset('images/ksu-logo.png');
+    @endphp
+
+    <img src="{{ $logoUrl }}" 
+         alt="{{ getOption('app_name') }}" 
+         style="height: 50px; width: auto; object-fit: contain;">
+
+    <div class="d-none d-md-block mx-3" style="width: 2px; height: 35px; background-color: #FFD700;"></div>
+
+    <div class="d-none d-sm-flex flex-column">
+        <span style="color:#FFD700; font-weight:800; font-size:18px; line-height:1; text-transform:uppercase;">
+            {{ getOption('app_name') }}
+        </span>
+        <span style="color:#ffffff; font-size:10px; font-weight:500; letter-spacing:1px;">
+            KALINGA STATE UNIVERSITY
+        </span>
+    </div>
+</a>
 
         @can('Manage Alumni')
         <a href="{{ route('alumni.list-search-with-filter') }}"
