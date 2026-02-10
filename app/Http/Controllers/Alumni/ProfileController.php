@@ -3,70 +3,80 @@
 namespace App\Http\Controllers\Alumni;
 
 use App\Http\Controllers\Controller;
-use App\Http\Services\UserService;
-use App\Models\RegisterForm;
-use App\Models\User;
-use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
-use PragmaRX\Google2FAQRCode\Google2FA;
-use App\Http\Requests\ProfileRequest;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File;
+use App\Models\User; // 🟢 Import the User Model
 
 class ProfileController extends Controller
 {
-    use ResponseTrait;
-
-    public $userService;
-
-    public function __construct()
+    public function index()
     {
-        $this->userService = new UserService();
+        return view('alumni.profile', ['user' => Auth::user()]);
     }
 
-    public function profile()
+    public function update(Request $request)
     {
-        $data['activeProfile'] = 'active';
-        $data['user'] = $this->userService->userData();
-        $data['regForm'] = RegisterForm::where('tenant_id', getTenantId())->first();
-        return view('alumni.profile',$data);
-    }
+        $user = User::find(Auth::id());
 
-    public function userProfileUpdate(ProfileRequest $request){
-        return $this->userService->profileUpdate($request);
-    }
-
-    public function addInstitution(Request $request){
-
-        return $this->userService->addInstitution($request);
-    }
-
-    public function changePasswordUpdate(Request $request)
-    {
-       return $this->userService->changePasswordUpdate($request);
-    }
-
-    public function security(){
-        $user = User::where('id',auth()->user()->id)->first();
-        $google2fa = new Google2FA();
-        $data['qr_code']= $google2fa->getQRCodeInline(
-            getOption('app_name'),
-            $user->email,
-            $user->google2fa_secret
-        );
-        return view('profile.security',$data);
-    }
-
-    public function smsSend(Request $request){
-        return $this->userService->smsSend($request);
-    }
-    public function smsReSend(){
-        return $this->userService->smsReSend();
-    }
-    public function smsVerify(Request $request){
         $request->validate([
-            'opt-field.*' => 'required|numeric|',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'image' => 'nullable|image|max:2048',
         ]);
-        return $this->userService->smsVerify($request);
+
+        // 1. Check if Image was uploaded
+        if ($request->hasFile('image')) {
+            $uploadPath = public_path('uploads/profile');
+            
+            if (!File::exists($uploadPath)) {
+                File::makeDirectory($uploadPath, 0755, true);
+            }
+
+            // Save the file
+            $imageName = time() . '.' . $request->image->extension();
+            $request->image->move($uploadPath, $imageName);
+            
+            // Assign to User
+            $user->image = 'uploads/profile/' . $imageName;
+            
+            // 🛑 DEBUG: Uncomment this line to see if the path is being set
+            // dd("File Uploaded! Path is: " . $user->image);
+        }
+
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        $user->mobile = $request->mobile;
+        
+        // 2. Save to Database
+        $saved = $user->save();
+
+        // 🛑 DEBUG: If it didn't save, this will tell us
+        if (!$saved) {
+            dd("Error: Database refused to save.");
+        }
+
+        return back()->with('success', 'Profile updated successfully!');
     }
 
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        // Check password on the FRESH instance
+        $user = User::find(Auth::id());
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Current password does not match!']);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return back()->with('success', 'Password changed successfully!');
+    }
 }

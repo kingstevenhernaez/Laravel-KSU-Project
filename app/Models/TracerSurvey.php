@@ -2,27 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TracerSurvey extends Model
 {
-    protected $table = 'tracer_surveys';
+    use HasFactory;
 
-    protected $fillable = [
-        'tenant_id',
-        'title',
-        'description',
-        'is_published',
-        'target_rules',
-    ];
+    protected $guarded = [];
 
-    protected $casts = [
-        'is_published' => 'boolean',
-        'target_rules' => 'array',
-    ];
-
-    public function questions()
+    // Relationship: A Survey has many Answers
+    public function answers()
     {
-        return $this->hasMany(TracerSurveyQuestion::class, 'survey_id')->orderBy('sort_order');
+        return $this->hasMany(TracerAnswer::class);
     }
 }

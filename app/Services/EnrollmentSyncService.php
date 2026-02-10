@@ -1,84 +1,56 @@
 <?php
 
-namespace App\Services\EnrollmentApi;
+namespace App\Services;
 
-use App\Models\KsuAlumniRecord;
-use App\Models\KsuEnrollmentSyncLog;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str; // 🟢 Import this to generate UUIDs
+use Carbon\Carbon;
 
-class AlumniSyncService
+class EnrollmentSyncService
 {
-    protected $baseUrl;
-    protected $apiKey;
-
-    public function __construct()
+    public function syncStudent(array $data)
     {
-        $this->baseUrl = env('KSU_ENROLLMENT_API_BASE_URL');
-        $this->apiKey = env('KSU_ENROLLMENT_API_KEY');
-    }
+        // 1. Generate Default Password
+        $bdayFormatted = Carbon::parse($data['birthdate'])->format('Ymd');
+        $defaultPassword = $data['student_id'] . $bdayFormatted;
 
-    /**
-     * REAL SYNC: Connects to the Mock API
-     */
-    public function syncGraduatedStudents()
-    {
-        // 1. Call the Real API
-        $response = Http::withHeaders(['X-API-KEY' => $this->apiKey])
-            ->timeout(5) // Wait up to 5 seconds
-            ->get("{$this->baseUrl}/graduates");
+        // 2. Determine Name
+        $fullName = $data['first_name'] . ' ' . $data['last_name'];
 
-        // 2. Check for Errors
-        if ($response->failed()) {
-            $errorMsg = $response->body() ?: $response->status();
-            throw new \Exception("Failed to connect to Mock API at {$this->baseUrl}. Error: $errorMsg");
+        // 3. Find existing user OR create a new instance
+        // We use firstOrNew so we can generate a UUID only if it's a NEW user
+        $user = User::firstOrNew(['student_id' => $data['student_id']]);
+
+        // 4. If it's a BRAND NEW user, set the one-time fields
+        if (!$user->exists) {
+            $user->uuid = (string) Str::uuid(); // 🟢 Generate Random UUID
+            $user->password = Hash::make($defaultPassword);
+            $user->force_password_change = true;
+            $user->status = 1;
+            $user->role = 0; // Alumni
+            $user->is_alumni = true;
         }
 
-        $students = $response->json();
+        // 5. Update the details (Runs for both New and Existing users)
+        $user->first_name = $data['first_name'];
+        $user->middle_name = $data['middle_name'] ?? null;
+        $user->last_name = $data['last_name'];
+        $user->suffix_name = $data['suffix_name'] ?? null;
+        $user->name = $fullName;
         
-        if (empty($students)) {
-            return 0; // Connection worked, but no students found
-        }
+        $user->email = $data['email'];
+        $user->mobile = $data['contact_number'] ?? null;
+        $user->birthdate = $data['birthdate'];
+        $user->address = $data['address'] ?? null;
+        
+        $user->course = $data['course'];
+        $user->department = $data['department'] ?? null;
+        $user->year_graduated = $data['year_graduated'];
 
-        // 3. Save Data to Database
-        $count = 0;
-        foreach ($students as $data) {
-            KsuAlumniRecord::updateOrCreate(
-                ['student_number' => $data['student_id']],
-                [
-                    'first_name'      => $data['first_name'],
-                    'last_name'       => $data['last_name'],
-                    'email'           => $data['email'],
-                    'birthdate'       => $data['birthdate'],
-                    'graduation_year' => $data['year'],
-                    'department_code' => $data['dept'],
-                    'tenant_id'       => 1, // Force Tenant ID 1
-                ]
-            );
-            $count++;
-        }
+        // 6. Save changes
+        $user->save();
 
-        // 4. Log Success
-        KsuEnrollmentSyncLog::create([
-            'synced_count' => $count,
-            'status'       => 'success',
-            'tenant_id'    => 1,
-        ]);
-
-        return $count;
-    }
-
-    public function updateJobInEnrollment($studentId, $jobData)
-    {
-        // This is for the Bidirectional Sync later
-        $response = Http::withHeaders(['X-API-KEY' => $this->apiKey])
-             ->post("{$this->baseUrl}/update-job", [
-                'student_id' => $studentId,
-                'company' => $jobData['company'],
-                'position' => $jobData['position'],
-                'start_date' => $jobData['start_date'],
-            ]);
-            
-        return $response->successful();
+        return $user;
     }
 }

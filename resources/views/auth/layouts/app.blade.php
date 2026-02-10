@@ -1,30 +1,29 @@
 <!DOCTYPE html>
-<html class="no-js" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 
 @include('layouts.header')
-{!! RecaptchaV3::initJs() !!}
 
-<body class="{{ optional(selectedLanguage())->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
+<body class="direction-ltr">
 
-<input type="hidden" id="lang_code" value="{{session('local')}}">
-@if (getOption('app_preloader_status', 0) == STATUS_ACTIVE)
-    <div id="preloader">
+    <div id="preloader" style="display: none;">
         <div id="preloader_status">
-            <img src="{{ getSettingImage('app_preloader') }}" alt="{{ getOption('app_name') }}"/>
+            <img src="{{ asset('assets/images/branding/ksu-logo.png') }}" alt="KSU Alumni"/>
         </div>
     </div>
-@endif
 
-@yield('content')
-@if (!empty(getOption('cookie_status')) && getOption('cookie_status') == STATUS_ACTIVE)
-    <div class="cookie-consent-wrap shadow-lg">
-        @include('cookie-consent::index')
-    </div>
-@endif
+    @yield('content')
 
-@include('layouts.script')
+    @include('layouts.script')
+    @stack('script')
 
-@stack('script')
+    <script>
+        window.onload = function() {
+            var preloader = document.getElementById('preloader');
+            if(preloader) {
+                preloader.style.display = 'none';
+            }
+        };
+    </script>
+
 </body>
-
 </html>

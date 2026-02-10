@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate; // <--- 1. ADD THIS LINE
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,14 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // <--- 2. ADD THIS BLOCK --->
-        // This grants the Admin (ID 1) permission to do EVERYTHING.
-        // It forces all sidebar buttons to appear, even if permissions are missing.
-        Gate::before(function ($user, $ability) {
-            if ($user->id === 1 || $user->email === 'admin@ksu.edu.ph') {
-                return true;
-            }
-        });
-        // <--- END BLOCK --->
+        // This fixes the "key length" error for older MySQL versions
+        Schema::defaultStringLength(191);
     }
 }

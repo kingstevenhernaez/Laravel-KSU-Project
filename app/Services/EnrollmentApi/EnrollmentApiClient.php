@@ -2,77 +2,42 @@
 
 namespace App\Services\EnrollmentApi;
 
-use App\Models\KsuAlumniRecord;
-use App\Models\KsuEnrollmentSyncLog;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class AlumniSyncService
+class EnrollmentApiClient
 {
-    protected $client;
+    protected $baseUrl;
+    protected $apiKey;
 
-    public function __construct(EnrollmentApiClient $client)
+    public function __construct()
     {
-        $this->client = $client;
+        $this->baseUrl = config('services.enrollment_api.url', 'https://enrollment.ksu.edu.ph/api');
+        $this->apiKey = config('services.enrollment_api.key');
     }
 
     /**
-     * PULL: Sync graduated students from Mock Enrollment to Alumni System.
+     * Fetch alumni records from the Enrollment System
+     * * @param string|null $updatedAfter Date string (Y-m-d)
+     * @return array
      */
-    public function syncGraduatedStudents()
-    {
-        // 1. Fetch data from Mock API
-        $students = $this->client->getGraduatedStudents();
-
-        if (empty($students)) {
-            Log::info('No new graduates to sync.');
-            return 0;
-        }
-
-        $count = 0;
-        foreach ($students as $data) {
-            // 2. Map and Save/Update Record
-            KsuAlumniRecord::updateOrCreate(
-                ['student_number' => $data['student_id']], // Unique ID
-                [
-                    'first_name'      => $data['first_name'],
-                    'last_name'       => $data['last_name'],
-                    'email'           => $data['email'],
-                    'birthdate'       => $data['birthdate'], // Format: YYYY-MM-DD
-                    'graduation_year' => $data['year'],
-                    'department_code' => $data['dept'],
-                    'tenant_id'       => getTenantId(),
-                ]
-            );
-            $count++;
-        }
-
-        // Log the activity
-        KsuEnrollmentSyncLog::create([
-            'synced_count' => $count,
-            'status'       => 'success',
-            'tenant_id'    => getTenantId(),
-        ]);
-
-        return $count;
-    }
-
-    /**
-     * PUSH: Automatically save Job History back to Mock Enrollment System.
-     */
-    public function updateJobInEnrollment($studentId, $jobData)
+    public function getAlumniRecords($updatedAfter = null)
     {
         try {
-            // Enrollment system ONLY accepts job updates
-            $response = $this->client->pushJobUpdate($studentId, $jobData);
-            
-            if ($response) {
-                Log::info("Job synced back to Mock Enrollment for student: {$studentId}");
-                return true;
+            $params = [];
+            if ($updatedAfter) {
+                $params['updated_after'] = $updatedAfter;
             }
-        } catch (\Exception $e) {
-            Log::error("Mock API Sync Failure: " . $e->getMessage());
-        }
 
-        return false;
+            // Mocking the request for now if no real endpoint exists
+            // Replace with: $response = Http::withToken($this->apiKey)->get($this->baseUrl . '/alumni', $params);
+            
+            // For now, return empty array to prevent crashes if API isn't live
+            return [];
+            
+        } catch (\Exception $e) {
+            Log::error("Enrollment API Error: " . $e->getMessage());
+            return [];
+        }
     }
 }

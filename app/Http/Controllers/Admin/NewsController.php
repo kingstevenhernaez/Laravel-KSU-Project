@@ -3,61 +3,90 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\NewsRequest;
-use App\Http\Services\NewsCategoryService;
-use App\Http\Services\NewsService;
-use App\Http\Services\NewsTagService;
-use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
+use App\Models\News;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class NewsController extends Controller
 {
-    use ResponseTrait;
-    public $newsService;
-
-    public function __construct()
+    // 1. List All News
+    public function index()
     {
-        $this->newsService = new NewsService();
+        $allNews = News::orderBy('created_at', 'desc')->paginate(10);
+        return view('admin.news.index', compact('allNews'));
     }
 
-    public function index(Request $request)
+    // 2. Show Create Form
+    public function create()
     {
-        if ($request->ajax()) {
-            return $this->newsService->list();
+        return view('admin.news.create');
+    }
+
+    // 3. Store New News (With Image Upload)
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|max:255',
+            'details' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
+        ]);
+
+        $news = new News();
+        $news->title = $request->title;
+        $news->slug = Str::slug($request->title);
+        $news->details = $request->details;
+        $news->status = 1;
+
+        // Image Upload Logic
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('news', 'public');
+            $news->image = $path;
         }
-        $categoryService = new NewsCategoryService();
-        $tagService = new NewsTagService();
-        $data['title'] = __('News');
-        $data['showManageNews'] = 'show';
-        $data['activeManageNews'] = 'active';
-        $data['categories'] = $categoryService->activeCategory();
-        $data['tags'] = $tagService->activeTag();
-        return view('admin.news.index', $data);
+
+        $news->save();
+
+        return redirect()->route('admin.news.index')->with('success', 'News posted successfully!');
     }
 
-    public function store(NewsRequest $request)
+    // 4. Show Edit Form
+    public function edit($id)
     {
-        return $this->newsService->store($request);
+        $news = News::findOrFail($id);
+        return view('admin.news.edit', compact('news'));
     }
 
-    public function info($id)
+    // 5. Update News
+    public function update(Request $request, $id)
     {
-        $categoryService = new NewsCategoryService();
-        $tagService = new NewsTagService();
-        $data['news'] = $this->newsService->getById($id);
-        $data['categories'] = $categoryService->activeCategory();
-        $data['tags'] = $tagService->activeTag();
-        $data['oldTags'] = $data['news']->tags->pluck('id')->toArray();
-        return view('admin.news.edit-form', $data);
+        $request->validate([
+            'title' => 'required|max:255',
+            'details' => 'required',
+        ]);
+
+        $news = News::findOrFail($id);
+        $news->title = $request->title;
+        $news->slug = Str::slug($request->title);
+        $news->details = $request->details;
+        $news->status = $request->status;
+
+        // Update Image if a new one is uploaded
+        if ($request->hasFile('image')) {
+            // Optional: Delete old image here if you want to save space
+            $path = $request->file('image')->store('news', 'public');
+            $news->image = $path;
+        }
+
+        $news->save();
+
+        return redirect()->route('admin.news.index')->with('success', 'News updated successfully!');
     }
 
-    public function update($id, NewsRequest $request)
+    // 6. Delete News
+    public function destroy($id)
     {
-        return $this->newsService->update($id, $request);
-    }
-
-    public function delete($id)
-    {
-        return $this->newsService->deleteById($id);
+        $news = News::findOrFail($id);
+        $news->delete();
+        return redirect()->route('admin.news.index')->with('success', 'News deleted successfully!');
     }
 }

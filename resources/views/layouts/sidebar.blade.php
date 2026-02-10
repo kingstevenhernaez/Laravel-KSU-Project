@@ -16,6 +16,7 @@
     </a>
     <div class="zSidebar-fixed">
         <ul class="zSidebar-menu" id="sidebarMenu">
+            {{-- ADMIN DASHBOARD LINK --}}
             @if ($isAdmin)
                 <li>
                     <a href="{{ route('admin.dashboard') }}" class="{{ $activeDashboard ?? '' }} d-flex align-items-center cg-10">
@@ -29,6 +30,7 @@
 
             @if((!isCentralDomain() || !isAddonInstalled('ALUSAAS')) && ($isAdmin || $isAlumni))
                 
+                {{-- HOME LINK --}}
                 @if($isAdmin || $isAlumni || auth()->user()->is_alumni == STATUS_ACTIVE)
                     <li>
                         <a href="{{ route('home') }}" class="{{ $activeHome ?? '' }} d-flex align-items-center cg-10">
@@ -40,6 +42,7 @@
                     </li>
                 @endif
 
+                {{-- ALUMNI LINK --}}
                 @if($isAdmin || $isAlumni || auth()->user()->is_alumni == STATUS_ACTIVE)
                     <li>
                         <a href="{{ route('alumni.list-search-with-filter') }}" class="{{ $activeAlumniList ?? '' }} d-flex align-items-center cg-10">
@@ -50,6 +53,24 @@
                         </a>
                     </li>
                 @endif
+
+                {{-- 🟢 NEW CAREER CENTER LINK START --}}
+                @if($isAdmin || $isAlumni || auth()->user()->is_alumni == STATUS_ACTIVE)
+                    <li>
+                        <a href="{{ route('alumni.jobs.index') }}" class="{{ request()->routeIs('alumni.jobs.*') ? 'active' : '' }} d-flex align-items-center cg-10">
+                            <div class="d-flex">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-opacity="0.7" stroke-width="1.5" stroke-linejoin="round"/>
+                                    <path d="M16 7V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V7" stroke="white" stroke-opacity="0.7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <line x1="12" y1="12" x2="12" y2="12.01" stroke="white" stroke-opacity="0.7" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <span class="">{{ __('Career Center') }}</span>
+                        </a>
+                    </li>
+                @endif
+                {{-- 🟢 NEW CAREER CENTER LINK END --}}
+
                 @can('Manage Event')
                     <li><a href="#myEvent" data-bs-toggle="collapse" role="button" aria-controls="myEvent" class="d-flex align-items-center cg-10 collapsed"><div class="d-flex"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="15" rx="2" stroke="white" stroke-width="1.5"/><path d="M4 11H20" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M9 16H15" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M8 3L8 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3L16 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div><span class="">{{ __('My Event') }}</span></a><div class="collapse" id="myEvent" data-bs-parent="#sidebarMenu"><ul class="zSidebar-submenu">@if ($isAdmin) @if(auth()->user()->is_alumni == STATUS_ACTIVE) <li><a href="{{ route('admin.event.category.index') }}">{{ __('Event Category') }}</a></li> @endif <li><a href="{{ route('admin.event.pending.index') }}">{{ __('Pending Event') }}</a></li> @endif <li><a href="{{ route('event.all') }}">{{ __('All Event') }}</a></li></ul></div></li>
                 @endcan

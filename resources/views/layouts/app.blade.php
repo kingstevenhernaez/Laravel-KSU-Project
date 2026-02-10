@@ -1,42 +1,32 @@
 <!DOCTYPE html>
-<html class="no-js" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 
-@include('layouts.header')
-<body class="{{ optional(selectedLanguage())->rtl == 1 ? 'direction-rtl' : 'direction-ltr' }}">
+@include('frontend.layouts.header')
 
-<input type="hidden" id="lang_code" value="{{session('local')}}">
-<div class="overflow-x-hidden">
-    @if (getOption('app_preloader_status', 0) == STATUS_ACTIVE)
-        <div id="preloader">
-            <div id="preloader_status">
-                @if(centralDomain() && isAddonInstalled('ALUSAAS'))
-                    <img src="{{ getSettingImageCentral('app_preloader') }}" alt="{{ getOption('app_name') }}"/>
-                @else
-                    <img src="{{ getSettingImage('app_preloader') }}" alt="{{ getOption('app_name') }}"/>
-                @endif
-            </div>
-        </div>
-    @endif
+<body class="direction-ltr">
 
-    <!-- Main Content -->
-    <div class="zMain-wrap">
-        <!-- Sidebar -->
-        @include('layouts.sidebar')
-        <!-- Main Content -->
-        <div class="zMainContent">
-            <!-- Header -->
-            @include('layouts.nav')
-            <!-- Content -->
-            @yield('content')
+    <div id="preloader">
+        <div id="preloader_status">
+            <img src="{{ asset('assets/images/branding/ksu-logo.png') }}" alt="KSU Alumni"/>
         </div>
     </div>
-</div>
-@if (!empty(getOption('cookie_status')) && getOption('cookie_status') == STATUS_ACTIVE)
-    <div class="cookie-consent-wrap shadow-lg">
-        @include('cookie-consent::index')
-    </div>
-@endif
-@include('layouts.script')
+
+    @include('frontend.layouts.nav')
+
+    @yield('content')
+
+    @include('frontend.layouts.footer')
+
+    @include('frontend.layouts.script')
+
+    <script>
+        window.onload = function() {
+            var preloader = document.getElementById('preloader');
+            if(preloader) {
+                preloader.style.display = 'none';
+            }
+        };
+    </script>
+
 </body>
-
 </html>

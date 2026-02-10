@@ -1,11 +1,9 @@
 <?php
 
-
 namespace App\Http\Services\Frontend;
 
 use App\Models\Event;
 use App\Models\JobPost;
-use App\Models\Membership;
 use App\Models\News;
 use App\Models\Notice;
 use App\Models\PhotoGallery;
@@ -17,48 +15,37 @@ class HomeService
 {
     use ResponseTrait;
 
-    public function getUpcomingEvent(){
-        $upcomingEvents = Event::where('events.tenant_id', getTenantId())->where('date', '>', now())->orderBy('date', 'ASC')->where('status', STATUS_ACTIVE)->with('category')->get();
-        return $upcomingEvents;
-    }
-    public function getPhotoGalleries(){
-        $photoGallery = PhotoGallery::where('photo_galleries.tenant_id', getTenantId())->where('status', STATUS_ACTIVE)->get();
-        return $photoGallery;
-    }
-
-    public function getAlumni($limit){
-        return User::where('users.tenant_id', getTenantId())->where(['users.status'=> STATUS_ACTIVE])
-        ->join('alumnus', 'users.id', '=', 'alumnus.user_id')
-        ->leftJoin('batches', 'batches.id', '=', 'alumnus.batch_id')
-        ->leftJoin('departments', 'departments.id', '=', 'alumnus.department_id')
-        ->orderBy('users.created_at', 'DESC')
-        ->select('users.name', 'users.id', 'users.image', 'batches.name as batch_name', 'departments.name as department_name')
-        ->paginate($limit);
+    public function getUpcomingEvent()
+    {
+        // Removed: where('events.tenant_id', getTenantId())
+        return Event::where('date', '>', now())
+            ->orderBy('date', 'ASC')
+            ->where('status', 1) // Assuming 1 is STATUS_ACTIVE
+            ->with('category')
+            ->get();
     }
 
-    public function getEvent($limit){
-        return Event::where('events.tenant_id', getTenantId())->where('status', STATUS_ACTIVE)->orderBy('created_at', 'desc')->paginate($limit);
+    public function getPhotoGalleries()
+    {
+        // Removed: where('photo_galleries.tenant_id', getTenantId())
+        return PhotoGallery::where('status', 1)->get();
     }
 
-    public function getNews($limit){
-        return News::where('news.tenant_id', getTenantId())->where('status', STATUS_ACTIVE)->with(['category', 'author'])->orderBy('id','DESC')->paginate($limit);
+    public function getAlumni($limit = 6)
+    {
+        // Removed: where('users.tenant_id', getTenantId())
+        return User::where('users.status', 1)
+            ->join('alumnus', 'users.id', '=', 'alumnus.user_id')
+            ->leftJoin('batches', 'batches.id', '=', 'alumnus.batch_id')
+            ->leftJoin('departments', 'departments.id', '=', 'alumnus.department_id')
+            ->orderBy('users.created_at', 'DESC')
+            ->select('users.name', 'users.id', 'users.image', 'batches.name as batch_name', 'departments.name as department_name')
+            ->limit($limit)
+            ->get();
     }
-
-    public function getNotice($limit){
-        return Notice::where('notices.tenant_id', getTenantId())->where('status', STATUS_ACTIVE)->with(['category'])->orderBy('id','DESC')->paginate($limit);
+    
+    public function getNews($limit = 3)
+    {
+        return News::where('status', 1)->orderBy('id', 'DESC')->limit($limit)->get();
     }
-
-    public function getMembership(){
-        return Membership::where('membership_plans.tenant_id', getTenantId())->where('status', STATUS_ACTIVE)->orderBy('id','DESC')->get();
-    }
-
-    public function getJob($limit){
-        return JobPost::where('job_posts.tenant_id', getTenantId())->where('status',JOB_STATUS_APPROVED)->orderBy('id','desc')->paginate($limit);
-    }
-
-    public function getStories($limit){
-        return Story::where('stories.tenant_id', getTenantId())->where('status',STATUS_ACTIVE)->orderBy('id','desc')->with('user')->paginate($limit);
-    }
-
-
 }

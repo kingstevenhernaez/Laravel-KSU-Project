@@ -3,26 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\LoginRequest;
-use Illuminate\Http\Request;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
     use AuthenticatesUsers;
 
     /**
@@ -42,74 +29,80 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
+    /**
+     * Show the application's login form.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
     /**
-     * Validate the user login request.
+     * Handle a login request to the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return void
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      */
-    protected function validateLogin(Request $request)
+    public function login(Request $request)
     {
-        if (!empty(getOption('google_recaptcha_status')) && getOption('google_recaptcha_status') == 1) {
-            $rules['g-recaptcha-response'] = ['required', 'recaptchav3:register,0.5'];
-        } else {
-            $rules = [
-                $this->username() => 'required|string',
-                'password' => 'required|string',
-            ];
-        }
-        $request->validate($rules);
+        // 1. Validate Input
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        // 2. Attempt Login
+        $credentials = $request->only('email', 'password');
+        $remember = $request->filled('remember');
+
+        if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+
+            // 3. Check if Account is Active (Standard Check)
+            // Assuming status 1 = Active, 0 = Suspended/Pending
+            if ($user->status == 0) { 
+                Auth::logout();
+                return redirect()->route('login')
+                    ->withInput()
+                    ->with('error', 'Your account is suspended or pending approval.');
+            }
+
+            // 4. Successful Login - Redirect
+            
+            // If Admin -> Go to Admin Panel
+            if ($user->role == 1) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            // If Alumni -> Go to Alumni Portal
+            if ($user->role == 2) {
+                return redirect()->route('alumni.dashboard');
+            }
+
+            // Fallback (e.g. for superadmins or errors)
+            return redirect('/');
+        } 
+
+        // 5. Failed Login (If Auth::attempt returns false)
+        return redirect()->back()
+            ->withInput($request->only('email'))
+            ->with('error', 'These credentials do not match our records.');
     }
 
-    public function login(LoginRequest $request)
+    /**
+     * Log the user out of the application.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function logout(Request $request)
     {
-        Session::put('2fa_status', false);
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        $field = 'email';
-
-        $request->merge([$field => $request->input('email')]);
-
-        $credentials = $request->only($field, 'password');
-
-        $remember = request('remember');
-
-        if (!Auth::attempt($credentials, $remember)) {
-            return redirect("login")->withInput()->with('error',  __('Email or password is incorrect'));
-        }
-
-        $user = auth()->user();
-        if($user->tenant_id != getTenantId() && (isCentralDomain() && !in_array($user->role, [USER_ROLE_ADMIN, USER_ROLE_SUPER_ADMIN]))){
-            Auth::logout();
-            return redirect("login")->withInput()->with('error',  __('Email or password is incorrect'));
-        }
-
-        if ($user->email_verification_status == STATUS_ACTIVE) {
-            if ($user->status == STATUS_SUSPENDED) {
-                Auth::logout();
-                return redirect("login")->withInput()->with('error', __('Your account is suspended Please contact our support center'));
-            } elseif ($user->deleted_at != null) {
-                Auth::logout();
-                return redirect("login")->withInput()->with('error', __('Your account has been deleted'));
-            }
-
-            if (isset($user) && ($user->status == STATUS_PENDING)) {
-                Auth::logout();
-                return redirect("login")->with('error', __('Your account is under approval. Please wait for approval'));
-            } else if (isset($user) && ($user->status == STATUS_REJECT)) {
-                Auth::logout();
-                return redirect("login")->withInput()->with('error', __('Your account is inactive. Please contact with admin'));
-            } else {
-                return redirect('login');
-            }
-        }
-
-        return redirect('login');
+        return redirect('/');
     }
 }

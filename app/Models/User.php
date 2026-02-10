@@ -3,84 +3,57 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use Stancl\Tenancy\Database\Models\Domain;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
- protected $fillable = [
-        'name', 'email', 'password', 'status', 'role', 
-        'is_alumni', 'tenant_id', 'uuid', 'email_verified_at', 'remember_token'
+    protected $fillable = [
+        'uuid',
+        'student_id',
+        'first_name',
+        'last_name',
+        'middle_name',
+        'suffix_name',
+        'name',
+        'email',
+        'password',
+        'mobile',
+        'birthdate',
+        'address',
+        'course',
+        'department', // This column conflicts with the function below if not fixed
+        'year_graduated',
+        'role',            
+        'status',
+        'is_alumni',
+        'force_password_change',
+        'image',
+        'email_verified_at',
     ];
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
+
     protected $hidden = [
         'password',
         'remember_token',
-        'google2fa_secret',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'last_seen' => 'datetime'
+        'password' => 'hashed',
     ];
 
-    public function alumni(){
-        return $this->hasOne(Alumni::class);
-    }
-
-    public function domain(){
-        return $this->hasOne(Domain::class, 'tenant_id', 'tenant_id');
-    }
-
-    public function institutions(){
-        return $this->hasMany(UserInstitution::class, 'user_id');
-    }
-
-    public function currentMembership(){
-        return $this->hasOne(UserMembershipPlan::class, 'user_id')->where('expired_date', '>=', now())->latest();
-    }
-
-    public function unseen_message()
+    public function getNameAttribute()
     {
-        return $this->hasMany(Chat::class, 'sender_id')->where(['is_seen' => STATUS_PENDING]);
+        return $this->first_name . ' ' . $this->last_name;
     }
 
-    public function messages()
+    // 🟢 RENAMED to 'departmentRel' to prevent crash
+    public function departmentRel()
     {
-        return $this->hasMany(Chat::class, 'receiver_id')->where('sender_id' , auth()->id());
-    }
-
-    public function currentPlan()
-    {
-        return $this->hasOne(UserPackage::class, 'user_id')->where('status', ACTIVE)->where('end_date', '>=', now());
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-        self::creating(function($model){
-            $model->uuid = Str::uuid()->toString();
-        });
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }
