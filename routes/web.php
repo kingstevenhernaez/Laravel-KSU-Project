@@ -40,7 +40,8 @@ Route::get('/home', function() {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
 
-
+Route::get('email-center', [EmailController::class, 'index'])->name('admin.emails.index');
+Route::post('email-center/send', [EmailController::class, 'send'])->name('admin.emails.send');
 
     Route::get('/dashboard', function () {
         $alumni = DB::table('users')->orderBy('created_at', 'desc')->take(5)->get();
