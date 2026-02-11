@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\JobPost; // Ensure this matches your Model name
+use Illuminate\Support\Facades\Mail; // 🟢 Add this
+use App\Mail\ApplicationStatusUpdated; // 🟢 Add this
 
 class JobController extends Controller
 {
@@ -109,12 +111,15 @@ class JobController extends Controller
     }
 
     // 🟢 2. Update Status (The Feedback System)
-    public function updateApplicationStatus(\Illuminate\Http\Request $request, $id)
+   public function updateApplicationStatus(\Illuminate\Http\Request $request, $id)
     {
-        $application = \App\Models\JobApplication::findOrFail($id);
+        $application = \App\Models\JobApplication::with(['user', 'job'])->findOrFail($id);
         $application->status = $request->status;
         $application->save();
 
-        return back()->with('success', 'Applicant status updated to ' . ucfirst($request->status));
+        // 🟢 TRIGGER EMAIL: Send notification to the alumni
+        Mail::to($application->user->email)->send(new ApplicationStatusUpdated($application));
+
+        return back()->with('success', 'Applicant status updated and email notification sent!');
     }
 }
