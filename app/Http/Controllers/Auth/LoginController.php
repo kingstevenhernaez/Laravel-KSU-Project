@@ -12,39 +12,19 @@ class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
+    // 🟢 FIX 3: Default redirect (fallback)
+    protected $redirectTo = '/';
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
     }
 
-    /**
-     * Show the application's login form.
-     *
-     * @return \Illuminate\View\View
-     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle a login request to the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|\Illuminate\Http\JsonResponse
-     */
     public function login(Request $request)
     {
         // 1. Validate Input
@@ -55,54 +35,48 @@ class LoginController extends Controller
 
         // 2. Attempt Login
         $credentials = $request->only('email', 'password');
+        
+        // Use 'remember' if the checkbox is checked
         $remember = $request->filled('remember');
 
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
-            // 3. Check if Account is Active (Standard Check)
-            // Assuming status 1 = Active, 0 = Suspended/Pending
+            // 3. Check Account Status (1 = Active, 0 = Inactive)
             if ($user->status == 0) { 
                 Auth::logout();
                 return redirect()->route('login')
                     ->withInput()
-                    ->with('error', 'Your account is suspended or pending approval.');
+                    ->with('error', 'Your account is currently deactivated. Please contact the admin.');
             }
 
-            // 4. Successful Login - Redirect
-            
-            // If Admin -> Go to Admin Panel
+            // 4. 🟢 REDIRECT LOGIC
+            // Role 1: Admin -> Admin Dashboard
             if ($user->role == 1) {
                 return redirect()->route('admin.dashboard');
             }
 
-            // If Alumni -> Go to Alumni Portal
-            if ($user->role == 2) {
+            // Role 2: Alumni -> Alumni Dashboard
+            if ($user->role == 2) { // Assuming 2 is Alumni
                 return redirect()->route('alumni.dashboard');
             }
-
-            // Fallback (e.g. for superadmins or errors)
+            
+            // Role 0 or others -> Home
             return redirect('/');
         } 
 
-        // 5. Failed Login (If Auth::attempt returns false)
+        // 5. Failed Login
         return redirect()->back()
             ->withInput($request->only('email'))
-            ->with('error', 'These credentials do not match our records.');
+            ->with('error', 'Invalid email or password.');
     }
 
-    /**
-     * Log the user out of the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

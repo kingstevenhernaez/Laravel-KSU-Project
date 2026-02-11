@@ -10,7 +10,8 @@
                 <div class="mb-3 position-relative d-inline-block">
                     {{-- Profile Image Preview --}}
                     @if($user->image)
-                        <img src="{{ asset($user->image) }}" class="rounded-circle border border-3 border-warning" 
+                        {{-- 🟢 FIX: Added 'storage/' prefix so images load correctly --}}
+                        <img src="{{ asset('storage/' . $user->image) }}" class="rounded-circle border border-3 border-warning" 
                              style="width: 150px; height: 150px; object-fit: cover;">
                     @else
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto border border-3 border-warning" 
@@ -72,7 +73,7 @@
                 <div class="card-body p-4">
                     <form action="{{ route('alumni.profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        
+                        @method('PUT')
                         <div class="row g-3">
                             {{-- Image Upload --}}
                             <div class="col-12 mb-2">
@@ -94,9 +95,11 @@
                                 <label class="form-label">Mobile Number</label>
                                 <input type="text" name="mobile" class="form-control" value="{{ $user->mobile }}">
                             </div>
+                            
+                            {{-- 🟢 FIX: Added 'name="email"' so the controller receives the value --}}
                             <div class="col-md-6">
                                 <label class="form-label">Email Address (Read Only)</label>
-                                <input type="email" class="form-control bg-light" value="{{ $user->email }}" readonly>
+                                <input type="email" name="email" class="form-control bg-light" value="{{ $user->email }}" readonly>
                             </div>
                         </div>
 

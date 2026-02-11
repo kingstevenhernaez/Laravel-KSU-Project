@@ -48,26 +48,28 @@
                             {{-- 🟢 SQUARE PHOTO CONTAINER --}}
                             <div class="avatar-container mb-3">
                                 @if($user->image)
-                                    {{-- Changed rounded-circle to rounded-3 for square with soft corners --}}
-                                    <img src="{{ asset($user->image) }}" class="rounded-3 border border-4 border-warning shadow" style="width: 140px; height: 140px; object-fit: cover;" crossorigin="anonymous">
+                                    {{-- CORRECTED: Points to 'storage/' + the filename in 'image' column --}}
+                                    <img src="{{ asset('storage/' . $user->image) }}" 
+                                         class="rounded-3 border border-4 border-warning shadow" 
+                                         style="width: 140px; height: 140px; object-fit: cover;" 
+                                         crossorigin="anonymous">
                                 @else
-                                    {{-- Fallback placeholder is also square now --}}
-                                    <div class="rounded-3 bg-white text-success d-flex justify-content-center align-items-center mx-auto border border-4 border-warning shadow" style="width: 140px; height: 140px; font-size: 50px; font-weight: bold;">
+                                    {{-- FALLBACK: Initials if no photo --}}
+                                    <div class="rounded-3 bg-white text-success d-flex justify-content-center align-items-center mx-auto border border-4 border-warning shadow" 
+                                         style="width: 140px; height: 140px; font-size: 50px; font-weight: bold;">
                                         {{ substr($user->first_name ?? 'A', 0, 1) }}
                                     </div>
                                 @endif
                             </div>
 
-                            {{-- 🟢 COMPLETE NAME (With Fallback) --}}
-                            {{-- This automatically shows the logged-in user's name. --}}
-                            {{-- If the name is missing in the DB, it shows 'Alumni Name' instead of being blank. --}}
+                            {{-- COMPLETE NAME --}}
                             <h4 class="fw-bold text-dark mb-0 text-uppercase px-2 text-truncate mx-auto" style="max-width: 90%; font-size: 18px;">
                                 {{ trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Alumni Name' }}
                             </h4>
                             
                             {{-- COURSE / DEPARTMENT --}}
                             <p class="text-success fw-bold mb-1 small text-uppercase px-3">
-                                {{ $user->department->name ?? 'Alumni Member' }}
+                                {{ $user->department->name ?? $user->department_id ?? 'Alumni Member' }}
                             </p>
                             
                             <div class="mt-1">
@@ -80,7 +82,9 @@
                         {{-- FOOTER: UNIQUE ID NUMBER --}}
                         <div class="py-2 w-100" style="background: #f8f9fa; border-top: 1px solid #eee;">
                             <small class="text-muted d-block text-uppercase" style="font-size: 9px; letter-spacing: 1px;">ID Number</small>
-                            <span class="fw-bold text-dark font-monospace" style="font-size: 14px; letter-spacing: 1px;">{{ $alumniIdNumber }}</span>
+                            <span class="fw-bold text-dark font-monospace" style="font-size: 14px; letter-spacing: 1px;">
+                                {{ $alumniIdNumber ?? $user->id }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -91,7 +95,7 @@
             </button>
         </div>
 
-        {{-- BACK SIDE --}}
+      {{-- BACK SIDE --}}
         <div class="col-md-6 col-lg-5">
             <h5 class="text-center fw-bold text-muted mb-3">BACK SIDE</h5>
             
@@ -119,10 +123,13 @@
                             </p>
                         </div>
 
-                        {{-- Signatory --}}
+                        {{-- 🟢 SIGNATORY (FIXED: ONE LINE) --}}
                         <div class="mb-4">
-                            <div class="mx-auto" style="width: 200px; border-bottom: 2px solid #333; margin-bottom: 5px;">
-                                <span style="font-family: 'Brush Script MT', cursive; font-size: 24px; color: #0B3D2E;"> Lou Marshal m. Banggawan</span>
+                            {{-- Changed width to 'fit-content' and added 'white-space: nowrap' --}}
+                            <div class="mx-auto px-2" style="width: fit-content; min-width: 200px; border-bottom: 2px solid #333; margin-bottom: 5px;">
+                                <span style="font-family: 'Brush Script MT', cursive; font-size: 22px; color: #0B3D2E; white-space: nowrap;"> 
+                                    Lou Marshal M. Banggawan
+                                </span>
                             </div>
                             <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-size: 12px;">Alumni Center Director</h6>
                             <small class="text-muted" style="font-size: 10px;">Signatory</small>

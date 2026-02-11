@@ -5,13 +5,9 @@ namespace App\Http\Controllers\Alumni;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-// Import Models
-use App\Models\TracerSurvey;
-use App\Models\TracerAnswer;
-use App\Models\Job;     // <--- We need this
-use App\Models\Event;   // <--- We need this
-use App\Models\News;    // <--- We need this
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use App\Models\JobPost; 
 
 class AlumniDashboardController extends Controller
 {
@@ -19,35 +15,57 @@ class AlumniDashboardController extends Controller
     {
         $user = Auth::user();
 
-        // 1. FETCH JOBS (Show latest 5 active jobs)
-        $jobs = Job::where('is_active', true)->latest()->take(5)->get();
-
-        // 2. FETCH EVENTS & NEWS (If they exist, otherwise empty)
-        $events = class_exists(Event::class) ? Event::latest()->take(3)->get() : [];
-        $news   = class_exists(News::class)  ? News::latest()->take(3)->get()  : [];
-
-        // 3. TRACER STUDY LOGIC
-        $activeSurvey = TracerSurvey::where('status', 1)->latest()->first();
-        $hasAnswered = false;
-        $activeSurveyId = null;
-
-        if ($activeSurvey) {
-            $activeSurveyId = $activeSurvey->id;
-            $hasAnswered = TracerAnswer::where('user_id', $user->id)
-                                        ->where('tracer_survey_id', $activeSurvey->id)
-                                        ->exists();
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        $pendingSurveys = ($activeSurvey && !$hasAnswered) ? 1 : 0;
+        // 🟢 FIX: Used 'is_active' instead of 'status'
+        $jobs = [];
+        if (Schema::hasTable('job_posts')) {
+            $jobs = DB::table('job_posts')
+                        ->where('is_active', 1) // <--- This was the error source
+                        ->orderBy('created_at', 'desc')
+                        ->take(5)
+                        ->get();
+        }
 
-        // 4. SEND TO VIEW
-        return view('alumni.dashboard', compact(
-            'user', 
-            'jobs',      // <--- Sending jobs to the dashboard
-            'events', 
-            'news', 
-            'pendingSurveys', 
-            'activeSurveyId'
-        ));
+        // 🟢 TRACER STUDY LOGIC
+        $activeSurveyId = null;
+        $pendingSurveys = 0;
+
+        if (Schema::hasTable('tracer_surveys') && Schema::hasTable('tracer_answers')) {
+            $activeSurvey = DB::table('tracer_surveys')
+                                ->where('status', 1) // Assuming Tracer still uses 'status'
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+
+            if ($activeSurvey) {
+                $activeSurveyId = $activeSurvey->id;
+                
+                // Check if user has answered
+                $hasAnswered = DB::table('tracer_answers')
+                                ->where('survey_id', $activeSurvey->id)
+                                ->where('user_id', $user->id)
+                                ->exists();
+
+                if (!$hasAnswered) {
+                    $pendingSurveys = 1;
+                }
+            }
+        }
+
+        return view('alumni.dashboard', compact('user', 'jobs', 'pendingSurveys', 'activeSurveyId'));
+    }
+
+    public function jobs()
+    {
+        $user = Auth::user();
+
+        // 🟢 Ensure the full job list also checks 'is_active'
+        $jobs = JobPost::where('is_active', 1)
+                       ->orderBy('created_at', 'desc')
+                       ->paginate(10);
+
+        return view('alumni.jobs', compact('user', 'jobs'));
     }
 }
