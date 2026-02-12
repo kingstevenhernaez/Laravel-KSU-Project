@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Department extends Model
 {
-    protected $fillable = ['tenant_id', 'name', 'short_name'];
-    public function alumni()
+    use HasFactory;
+
+    protected $fillable = ['name', 'description'];
+
+    // Optional: The inverse relationship (A Department has many Users)
+    public function users()
     {
-        return $this->hasMany(Alumni::class);
+        return $this->hasMany(User::class);
     }
 }

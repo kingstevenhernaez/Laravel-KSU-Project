@@ -93,11 +93,10 @@
             align-items: center;
             justify-content: center;
         }
-        /* Fallback Overlay */
         .hero-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(11, 61, 46, 0.85), rgba(11, 61, 46, 0.7));
+            background: linear-gradient(135deg, rgba(11, 61, 46, 0.9), rgba(11, 61, 46, 0.75));
             z-index: 1;
         }
         .hero-content {
@@ -110,7 +109,6 @@
             width: 100%;
         }
 
-        /* --- BADGE --- */
         .badge-pill {
             background-color: var(--ksu-gold);
             color: var(--ksu-green);
@@ -124,7 +122,6 @@
             margin-bottom: 25px;
         }
 
-        /* --- HEADLINES --- */
         .hero-title {
             font-weight: 900;
             font-size: 4rem;
@@ -147,15 +144,20 @@
             margin-right: auto;
         }
 
-        /* --- SEARCH BAR --- */
+        /* --- BIG SEARCH BAR --- */
         .hero-search-container {
-            max-width: 600px;
-            margin: 0 auto 40px auto;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
+            max-width: 700px;
+            margin: 0 auto 30px auto;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px;
             border-radius: 50px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .hero-search-form {
+            display: flex;
+            width: 100%;
         }
         .hero-search-input {
             border: none;
@@ -163,29 +165,33 @@
             border-radius: 50px 0 0 50px;
             padding-left: 30px;
             font-size: 16px;
+            flex-grow: 1;
+            background: white;
         }
         .hero-search-input:focus {
             box-shadow: none;
+            outline: none;
         }
         .hero-search-btn {
             background-color: var(--ksu-gold);
             color: var(--ksu-green);
             font-weight: 800;
             border-radius: 0 50px 50px 0;
-            padding: 0 30px;
+            padding: 0 35px;
             border: none;
             text-transform: uppercase;
             letter-spacing: 1px;
             transition: all 0.3s;
+            height: 55px;
         }
         .hero-search-btn:hover {
-            background-color: white;
+            background-color: #e6b325;
             color: var(--ksu-green);
         }
 
-        /* --- BENEFITS SECTION --- */
+        /* --- SECTIONS --- */
         .benefits-section {
-            padding: 80px 0;
+            padding: 100px 0;
             background-color: #f8f9fa;
         }
         .benefit-card {
@@ -221,6 +227,7 @@
             font-weight: 800;
             color: black;
             margin-bottom: 60px;
+            text-transform: uppercase;
         }
 
         /* --- RESPONSIVE --- */
@@ -228,6 +235,7 @@
             .hero-title { font-size: 2.5rem; }
             .hero-subtitle { font-size: 1rem; }
             .hero-search-container { width: 100%; }
+            .hero-search-btn { padding: 0 20px; font-size: 12px; }
         }
     </style>
 </head>
@@ -236,33 +244,26 @@
     {{-- NAVBAR --}}
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            {{-- Logo --}}
             <a class="navbar-brand d-flex align-items-center gap-3" href="{{ url('/') }}">
                 <img src="{{ asset('assets/images/branding/ksu-logo.png') }}" alt="KSU Logo" 
                      onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Kalinga_State_University_logo.png/600px-Kalinga_State_University_logo.png'">
                 <div>
-                    <span class="brand-text-main">KSU ALUMNI CENTER</span>
+                    <span class="brand-text-main">KSU FEDERATED ALUMNI ASSOCIATION INC.</span>
                     <span class="brand-text-sub">KALINGA STATE UNIVERSITY</span>
                 </div>
             </a>
 
-            {{-- Mobile Toggle --}}
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <i class="fas fa-bars"></i>
             </button>
 
-            {{-- Links --}}
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link active" href="{{ url('/') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#events">Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#benefits">Benefits</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                     
-                    {{-- Note: Directory link removed from here because we have the big search bar below --}}
-                    
-                    <li class="nav-item"><a class="nav-link" href="#">Events</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Community</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
-                    
-                    {{-- Login/Dashboard Button --}}
                     <li class="nav-item ms-lg-3">
                         @if (Route::has('login'))
                             @auth
@@ -298,11 +299,12 @@
                 and give back to the community that built you.
             </p>
 
-            {{-- BIG SEARCH BAR --}}
-            <div class="hero-search-container shadow-lg">
-                <form action="{{ route('public.directory') }}" method="GET" class="d-flex">
+            {{-- 🟢 SEARCH BAR (FUNCTIONAL) --}}
+            <div class="hero-search-container">
+                <form action="{{ route('public.directory') }}" method="GET" class="hero-search-form">
                     <input type="text" name="search" class="form-control hero-search-input" 
                            placeholder="Search Alumni by Name, Batch, or Course..." 
+                           value="{{ request('search') }}"
                            required>
                     <button class="btn hero-search-btn" type="submit">
                         <i class="fas fa-search me-2"></i> SEARCH
@@ -310,17 +312,22 @@
                 </form>
             </div>
 
-            <div class="d-flex justify-content-center flex-wrap mt-4">
+            {{-- Links --}}
+            <div class="d-flex justify-content-center flex-wrap mt-3 gap-4">
+                <a href="#benefits" class="text-white text-decoration-none fw-bold small text-uppercase" style="letter-spacing: 1px;">
+                    <i class="fas fa-arrow-down me-1 text-warning"></i> Explore Benefits
+                </a>
                 @if (Route::has('register'))
-                    <a href="{{ route('register') }}" style="color:white; text-decoration:underline; font-weight:600; font-size:14px; margin:0 15px;">Join the Community</a>
+                    <a href="{{ route('register') }}" class="text-white text-decoration-none fw-bold small text-uppercase" style="letter-spacing: 1px;">
+                        <i class="fas fa-user-plus me-1 text-warning"></i> Join Community
+                    </a>
                 @endif
-                <a href="{{ route('login') }}" style="color:white; text-decoration:underline; font-weight:600; font-size:14px; margin:0 15px;">Member Login</a>
             </div>
         </div>
     </section>
 
-    {{-- MEMBERSHIP BENEFITS SECTION --}}
-    <section class="benefits-section">
+    {{-- MEMBERSHIP BENEFITS SECTION (ID: benefits) --}}
+    <section id="benefits" class="benefits-section">
         <div class="container text-center">
             
             <span class="section-badge">MEMBERSHIP BENEFITS</span>
@@ -350,7 +357,7 @@
                 </div>
 
                 {{-- Card 3: University Events --}}
-                <div class="col-md-4">
+                <div class="col-md-4" id="events"> {{-- ID added here for the Events Link --}}
                     <div class="benefit-card shadow-sm">
                         <i class="fas fa-calendar-alt benefit-icon"></i>
                         <h4 class="fw-bold mb-3">University Events</h4>
@@ -364,19 +371,19 @@
         </div>
     </section>
 
-   {{-- 🟢 PROFESSIONAL FOOTER --}}
-    <footer style="background-color: #0B3D2E; color: white; border-top: 4px solid #FFC72C; padding-top: 60px;">
+    {{-- FOOTER (ID: contact) --}}
+    <footer id="contact" style="background-color: #0B3D2E; color: white; border-top: 4px solid #FFC72C; padding-top: 60px;">
         <div class="container">
             <div class="row">
                 
                 {{-- Left Column: Logo & Info --}}
                 <div class="col-md-5 mb-4">
                     <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset('images/ksu-logo.png') }}" 
+                        <img src="{{ asset('assets/images/branding/ksu-logo.png') }}" 
                              alt="KSU Logo" 
                              width="50" 
                              class="me-3"
-                             onerror="this.src='{{ asset('assets/images/branding/ksu-logo.png') }}'">
+                             onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Kalinga_State_University_logo.png/600px-Kalinga_State_University_logo.png'">
                         
                         <div>
                             <h6 class="fw-bold mb-0 text-uppercase" style="font-size: 14px; letter-spacing: 1px;">Kalinga State University</h6>

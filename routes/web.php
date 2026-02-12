@@ -12,6 +12,7 @@ use App\Http\Controllers\Alumni\ProfileController;
 use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\TracerController;
 use App\Http\Controllers\Admin\AlumniController;
+use App\Http\Controllers\Admin\EmailController; // Added missing import
 use App\Http\Controllers\Frontend\AlumniDirectoryController;
 
 /*
@@ -39,9 +40,12 @@ Route::get('/home', function() {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // Email Center Routes
+    Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
+    Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
 
-Route::get('email-center', [EmailController::class, 'index'])->name('admin.emails.index');
-Route::post('email-center/send', [EmailController::class, 'send'])->name('admin.emails.send');
+    // 🔴 I REMOVED THE WRONG 'portal/events' LINE FROM HERE
 
     Route::get('/dashboard', function () {
         $alumni = DB::table('users')->orderBy('created_at', 'desc')->take(5)->get();
@@ -70,17 +74,13 @@ Route::post('email-center/send', [EmailController::class, 'send'])->name('admin.
     })->name('alumni.status');
 
     Route::resource('jobs', JobController::class);
-    Route::get('jobs/{id}/applicants', [JobController::class, 'applicants'])->name('jobs.applicants');
 
     Route::get('/tracer', [TracerController::class, 'index'])->name('tracer.index');
     Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store');
-    Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('
-        tracer.destroy');
+    Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy');
 
-    // 🟢 NEW: View Applicants for a specific job
+    // Job Applicants Logic
     Route::get('jobs/{id}/applicants', [JobController::class, 'applicants'])->name('jobs.applicants');
-    
-    // 🟢 NEW: Update Application Status (e.g., Pending -> Hired)
     Route::post('jobs/applications/{applicationId}/update', [JobController::class, 'updateApplicationStatus'])
          ->name('jobs.application.status');
 });
@@ -95,6 +95,10 @@ Route::post('email-center/send', [EmailController::class, 'send'])->name('admin.
 // 🟢 ALUMNI DASHBOARD & PROFILE (Prefix: /portal, Name: alumni.)
 Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function () {
     
+    // 🟢 MOVED HERE: This is the correct spot!
+    // Combined with prefix/name, this creates: URL: /portal/events | Name: alumni.events
+    Route::get('/events', [AlumniDashboardController::class, 'allEvents'])->name('events');
+
     // URL: /portal/dashboard  -> Name: alumni.dashboard
     Route::get('/dashboard', [AlumniDashboardController::class, 'index'])->name('dashboard');
     
@@ -114,8 +118,7 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
     Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
 });
 
-// 🟢 JOB APPLICATION ROUTE (Kept separate/outside the group to avoid double prefixing)
-// This matches exactly what is in your View form: route('jobs.apply')
+// 🟢 JOB APPLICATION ROUTE 
 Route::middleware(['auth'])
      ->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])
      ->name('jobs.apply');

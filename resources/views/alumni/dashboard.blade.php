@@ -28,7 +28,6 @@
 
     {{-- Stats Row --}}
     <div class="row g-4 mb-4 align-items-stretch">
-        
         {{-- Card 1: Alumni ID --}}
         <div class="col-md-4">
             <div class="card bg-success text-white h-100 shadow-sm border-0 position-relative overflow-hidden">
@@ -61,7 +60,6 @@
                         <h5 class="fw-bold">Career Ops</h5>
                         <p class="text-muted small mb-0">Job openings exclusive to KSU grads.</p>
                     </div>
-                    {{-- 🟢 ADDED LINK HERE: Clicking the card goes to jobs --}}
                     <a href="{{ route('alumni.jobs.index') }}" class="stretched-link"></a>
                 </div>
             </div>
@@ -85,32 +83,48 @@
                         <h5 class="fw-bold">Tracer Study</h5>
                         <p class="text-muted small mb-0">Help us improve by updating your status.</p>
                     </div>
-                    {{-- Link logic for Tracer --}}
                     <a href="{{ isset($activeSurveyId) ? route('alumni.tracer.show', $activeSurveyId) : '#' }}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Rest of your dashboard content... (Announcements, etc.) --}}
-    {{-- I am keeping the bottom part same as you had it --}}
+    {{-- Main Content Row --}}
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-bullhorn me-2 text-success"></i> Latest Announcements</h5>
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fas fa-calendar-alt me-2 text-success"></i> Upcoming Events
+                    </h5>
+                    <a href="{{ route('alumni.events') }}" class="btn btn-link text-success text-decoration-none small">View All</a>
                 </div>
-                <div class="card-body p-0">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item p-5 text-center text-muted">
-                            <i class="fas fa-calendar-times fa-2x mb-2 d-block opacity-25"></i>
-                            No announcements posted yet.
-                        </li>
-                    </ul>
+                <div class="card-body p-4">
+                    <div class="row">
+                        @forelse($events as $event)
+                            <div class="col-md-6 mb-3">
+                                <div class="p-3 rounded border-start border-success border-4 bg-light h-100 shadow-sm">
+                                    <h6 class="fw-bold text-dark mb-1">{{ $event->title }}</h6>
+                                    <p class="small text-muted mb-2">
+                                       <i class="far fa-clock me-1"></i> {{ \Carbon\Carbon::parse($event->date)->format('M d, Y | h:i A') }}
+                                    </p>
+                                    <p class="small text-secondary mb-0">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i> {{ \Illuminate\Support\Str::limit($event->location, 40) }}
+                                    </p>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="col-12 text-center py-5 text-muted">
+                                <i class="fas fa-calendar-times fa-3x mb-3 opacity-25"></i>
+                                <p>No upcoming events at the moment. Stay tuned!</p>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
 
+        {{-- Profile Summary Card --}}
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body text-center py-5 d-flex flex-column justify-content-center align-items-center">

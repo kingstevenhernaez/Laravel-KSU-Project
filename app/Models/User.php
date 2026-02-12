@@ -52,7 +52,7 @@ class User extends Authenticatable
     }
 
     // 🟢 RENAMED to 'departmentRel' to prevent crash
-    public function departmentRel()
+    public function department()
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
