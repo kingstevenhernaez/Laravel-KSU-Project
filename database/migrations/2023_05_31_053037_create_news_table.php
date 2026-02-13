@@ -11,21 +11,22 @@ return new class extends Migration
      *
      * @return void
      */
-    public function up()
-    {
+public function up()
+{
+    // Check if table exists to prevent crashes
+    if (!Schema::hasTable('news')) {
         Schema::create('news', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('news_category_id');
             $table->string('title');
-            $table->string('slug');
-            $table->longText('details');
-            $table->integer('image')->nullable();
-            $table->tinyInteger('status')->default(STATUS_PENDING);
-            $table->unsignedBigInteger('created_by');
+            $table->string('slug')->unique();
+            $table->text('content');               
+            $table->string('image')->nullable();
+            $table->string('author')->default('Admin'); 
+            $table->timestamp('published_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
+}
 
     /**
      * Reverse the migrations.

@@ -2,91 +2,95 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Intervention\Image\Facades\Image;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\News;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class NewsController extends Controller
 {
-    // 1. List All News
+    // 1. List all News
     public function index()
     {
-        $allNews = News::orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.news.index', compact('allNews'));
+        $news = News::latest()->paginate(10);
+        return view('admin.news.index', compact('news'));
     }
 
-    // 2. Show Create Form
+    // 2. Show the "Create News" Form
     public function create()
     {
         return view('admin.news.create');
     }
 
-    // 3. Store New News (With Image Upload)
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|max:255',
-            'details' => 'required',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
-        ]);
+ // 3. Store the News in Database
+public function store(Request $request)
+{
+    // 1. Validation (We can remove the 'max:2048' since we are resizing now)
+    $request->validate([
+        'title' => 'required|max:255',
+        'content' => 'required',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif', // max:2048 removed
+    ]);
 
-        $news = new News();
-        $news->title = $request->title;
-        $news->slug = Str::slug($request->title);
-        $news->details = $request->details;
-        $news->status = 1;
+    $imagePath = null;
 
-        // Image Upload Logic
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('news', 'public');
-            $news->image = $path;
+    // 2. Handle Image Upload & Resizing
+    if ($request->hasFile('image')) {
+        // Get the file
+        $image = $request->file('image');
+        
+        // Create a unique filename
+        $filename = time() . '.' . $image->getClientOriginalExtension();
+        
+        // Define the saving path (inside storage/app/public/news)
+        $location = storage_path('app/public/news/' . $filename);
+
+        // Make sure the directory exists
+        if (!file_exists(storage_path('app/public/news'))) {
+            mkdir(storage_path('app/public/news'), 0777, true);
         }
 
-        $news->save();
+        // --- THE MAGIC HAPPENS HERE ---
+        // Use Intervention Image to open, resize, and save the file.
+        Image::make($image)
+            ->resize(800, null, function ($constraint) {
+                // This keeps the aspect ratio so the image doesn't get squished
+                $constraint->aspectRatio();
+                // This prevents smaller images from being upscaled (getting blurry)
+                $constraint->upsize();
+            })
+            ->save($location, 80); // Save with 80% quality (good balance of size/quality)
 
-        return redirect()->route('admin.news.index')->with('success', 'News posted successfully!');
+        // Set the path to save in the database
+        $imagePath = 'news/' . $filename;
     }
 
-    // 4. Show Edit Form
-    public function edit($id)
-    {
-        $news = News::findOrFail($id);
-        return view('admin.news.edit', compact('news'));
-    }
+    // 3. Create the News Item
+    News::create([
+        'title' => $request->title,
+        'slug' => Str::slug($request->title),
+        'content' => $request->content,
+        'image' => $imagePath,
+        'author' => auth()->user()->name ?? 'Admin',
+        'published_at' => now(),
+    ]);
 
-    // 5. Update News
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'title' => 'required|max:255',
-            'details' => 'required',
-        ]);
+    return redirect()->route('admin.news.index')->with('success', 'News posted successfully!');
+}
 
-        $news = News::findOrFail($id);
-        $news->title = $request->title;
-        $news->slug = Str::slug($request->title);
-        $news->details = $request->details;
-        $news->status = $request->status;
-
-        // Update Image if a new one is uploaded
-        if ($request->hasFile('image')) {
-            // Optional: Delete old image here if you want to save space
-            $path = $request->file('image')->store('news', 'public');
-            $news->image = $path;
-        }
-
-        $news->save();
-
-        return redirect()->route('admin.news.index')->with('success', 'News updated successfully!');
-    }
-
-    // 6. Delete News
+    // 4. Delete News
     public function destroy($id)
     {
         $news = News::findOrFail($id);
+
+        // Delete image if exists
+        if ($news->image) {
+            Storage::disk('public')->delete($news->image);
+        }
+
         $news->delete();
-        return redirect()->route('admin.news.index')->with('success', 'News deleted successfully!');
+        return back()->with('success', 'News deleted successfully!');
     }
 }

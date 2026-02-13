@@ -33,10 +33,12 @@
         </li>
 
         <li class="mb-1">
-            <a href="{{ route('admin.news.index') }}" class="nav-link text-white {{ Request::is('admin/news*') ? 'active bg-success shadow' : 'hover-opacity' }}">
-                <i class="fas fa-newspaper me-2"></i> News & Updates
-            </a>
-        </li>
+    <a href="{{ route('admin.news.index') }}" 
+       class="nav-link text-white {{ Request::is('admin/news*') ? 'active bg-success shadow' : 'hover-opacity' }}">
+        <i class="fas fa-newspaper me-2"></i> News & Updates
+    </a>
+</li>
+</li>
 
         <li class="mb-1">
             <a href="{{ route('admin.jobs.index') }}" class="nav-link text-white {{ Request::is('admin/jobs*') ? 'active bg-success shadow' : 'hover-opacity' }}">

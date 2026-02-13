@@ -12,15 +12,24 @@ use App\Http\Controllers\Alumni\ProfileController;
 use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\TracerController;
 use App\Http\Controllers\Admin\AlumniController;
-use App\Http\Controllers\Admin\EmailController; // Added missing import
+use App\Http\Controllers\Admin\EmailController;
 use App\Http\Controllers\Frontend\AlumniDirectoryController;
+use App\Models\News; // 🟢 ADDED: Import News Model
 
 /*
 |--------------------------------------------------------------------------
 | 1. PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () { return view('welcome'); })->name('index'); 
+
+// 🟢 MODIFIED: Homepage now fetches News
+Route::get('/', function () { 
+    // Fetch latest 3 news items
+    $news = News::latest()->take(3)->get();
+    
+    return view('welcome', compact('news')); 
+})->name('index'); 
+
 Route::get('/alumni-directory', [AlumniDirectoryController::class, 'index'])->name('public.directory');
 
 Auth::routes();
@@ -33,6 +42,11 @@ Route::get('/home', function() {
     return redirect()->route('alumni.dashboard');
 })->name('home');
 
+// Route to view a single news article
+Route::get('/news/{slug}', function ($slug) {
+    $newsItem = App\Models\News::where('slug', $slug)->firstOrFail();
+    return view('news.show', compact('newsItem'));
+})->name('news.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -45,15 +59,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
 
-    // 🔴 I REMOVED THE WRONG 'portal/events' LINE FROM HERE
-
     Route::get('/dashboard', function () {
         $alumni = DB::table('users')->orderBy('created_at', 'desc')->take(5)->get();
         $total_users = DB::table('users')->count();
         $total_alumni = DB::table('users')->where('role', 2)->count(); 
         $pending_verify = DB::table('users')->whereNull('email_verified_at')->count();
 
-        return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify'));
+        // Pass empty events array to prevent dashboard crash if widget exists
+        $events = [];
+
+        return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify', 'events'));
     })->name('dashboard');
 
     Route::get('/alumni', function () {
@@ -91,34 +106,20 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 | 3. ALUMNI PORTAL ROUTES
 |--------------------------------------------------------------------------
 */
-
-// 🟢 ALUMNI DASHBOARD & PROFILE (Prefix: /portal, Name: alumni.)
 Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function () {
     
-    // 🟢 MOVED HERE: This is the correct spot!
-    // Combined with prefix/name, this creates: URL: /portal/events | Name: alumni.events
     Route::get('/events', [AlumniDashboardController::class, 'allEvents'])->name('events');
-
-    // URL: /portal/dashboard  -> Name: alumni.dashboard
     Route::get('/dashboard', [AlumniDashboardController::class, 'index'])->name('dashboard');
-    
-    // URL: /portal/id-card    -> Name: alumni.id_card
     Route::get('/id-card', [AlumniIDController::class, 'show'])->name('id_card');
-
-    // URL: /portal/jobs       -> Name: alumni.jobs.index
     Route::get('/jobs', [AlumniDashboardController::class, 'jobs'])->name('jobs.index'); 
-    
-    // URL: /portal/profile    -> Name: alumni.profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
-    
-    // URL: /portal/profile/update -> Name: alumni.profile.update
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-    
-    // URL: /portal/profile/password -> Name: alumni.profile.password
     Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
 });
 
-// 🟢 JOB APPLICATION ROUTE 
 Route::middleware(['auth'])
      ->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])
      ->name('jobs.apply');
+
+
+

@@ -2,26 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class News extends Model
 {
-    use SoftDeletes;
+    use HasFactory;
 
-    protected  $table = 'news';
+    protected $fillable = [
+        'title',
+        'slug',
+        'content',
+        'image',
+        'author',
+        'published_at',
+    ];
 
-    protected $fillable = ['tenant_id', 'title', 'description', 'status'];
-
-    public function tags(){
-        return $this->belongsToMany(NewsTag::class, 'news_tag', 'news_id', 'tag_id');
-    }
-
-    public function author(){
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function category(){
-        return $this->belongsTo(NewsCategory::class, 'news_category_id');
-    }
+    // Helper to format date easily
+    protected $casts = [
+        'published_at' => 'datetime',
+    ];
 }

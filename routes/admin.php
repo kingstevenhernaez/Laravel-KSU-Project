@@ -6,7 +6,8 @@ use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\TracerController;
 use App\Http\Controllers\Admin\EmailController;
-use App\Http\Controllers\Admin\EventController; // 🟢 Moved to top
+use App\Http\Controllers\Admin\EventController; 
+use App\Http\Controllers\Admin\NewsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,18 +15,20 @@ use App\Http\Controllers\Admin\EventController; // 🟢 Moved to top
 |--------------------------------------------------------------------------
 */
 
-// 🟢 1. DASHBOARD (Inline Logic Preserved)
+// 1. DASHBOARD
 Route::get('/dashboard', function () {
     $alumni = DB::table('users')->orderBy('created_at', 'desc')->paginate(5);
     $total_users = DB::table('users')->count();
-    $total_alumni = DB::table('users')->where('is_alumni', 1)->count(); // Check if column is 'is_alumni' or just 'role'
+    $total_alumni = DB::table('users')->where('role', 2)->count(); 
     $pending_verify = DB::table('users')->whereNull('email_verified_at')->count();
 
-    return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify'));
+    // Disable events widget temporarily
+    $events = [];
+
+    return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify', 'events'));
 })->name('dashboard');
 
-// 🟢 2. ALUMNI MANAGEMENT
-// List View (Inline Logic Preserved)
+// 2. ALUMNI MANAGEMENT
 Route::get('/alumni', function () {
     $alumni = DB::table('users')
                 ->where('role', '!=', 1) 
@@ -34,7 +37,6 @@ Route::get('/alumni', function () {
     return view('admin.alumni.index', ['alumni' => $alumni]);
 })->name('alumni.index');
 
-// View Profile (Inline Logic Preserved)
 Route::get('alumni/{id}', function ($id) {
     $user = DB::table('users')->where('id', $id)->first();
     if (!$user) {
@@ -43,7 +45,6 @@ Route::get('alumni/{id}', function ($id) {
     return view('admin.alumni.show', ['user' => $user]);
 })->name('alumni.show');
 
-// Change Status (Inline Logic Preserved)
 Route::post('/alumni/status/{id}', function ($id) {
     $user = DB::table('users')->where('id', $id)->first();
     if ($user) {
@@ -53,11 +54,10 @@ Route::post('/alumni/status/{id}', function ($id) {
     return back()->with('success', 'Status updated successfully!');
 })->name('alumni.status');
 
-// Delete Alumni (Uses Controller)
 Route::delete('alumni/{id}', [AlumniController::class, 'destroy'])->name('alumni.destroy');
 
 
-// 🟢 3. EVENTS MANAGEMENT (Uses Controller)
+// 3. EVENTS MANAGEMENT
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
 Route::post('/events/store', [EventController::class, 'store'])->name('events.store');
@@ -66,18 +66,18 @@ Route::put('/events/{id}', [EventController::class, 'update'])->name('events.upd
 Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.destroy');
 
 
-// 🟢 4. COMMUNICATION (Email Blast)
+// 4. COMMUNICATION (Email Blast)
 Route::get('/messages/create', [EmailController::class, 'index'])->name('messages.create');
 Route::post('/messages/send', [EmailController::class, 'send'])->name('emails.send');
 Route::get('/messages/sent', [EmailController::class, 'sentBox'])->name('messages.sent');
 Route::delete('/messages/sent/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
 
 
-// 🟢 5. JOBS & CAREERS
+// 5. JOBS & CAREERS
 Route::resource('jobs', JobController::class);
 
 
-// 🟢 6. TRACER STUDY
+// 6. TRACER STUDY
 Route::get('/tracer', [TracerController::class, 'index'])->name('tracer.index');
 Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store');
 Route::get('/tracer/answers/{id}', [TracerController::class, 'show'])->name('tracer.answers');
@@ -85,5 +85,10 @@ Route::get('/tracer/export/{id}', [TracerController::class, 'exportAnswers'])->n
 Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy');
 
 
-// 🟢 7. NEWS (Placeholder)
-Route::get('/news', function () { return "News Page Coming Soon"; })->name('news.index');
+// 7. NEWS & UPDATES (FIXED)
+// 🟢 Explicit routes to ensure Sidebar "route('admin.news.index')" works perfectly.
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
+Route::post('/news/store', [NewsController::class, 'store'])->name('news.store');
+Route::delete('/news/{id}', [NewsController::class, 'destroy'])->name('news.destroy');
+

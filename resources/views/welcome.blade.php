@@ -245,7 +245,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-3" href="{{ url('/') }}">
-                <img src="{{ asset('assets/images/branding/ksu-logo.png') }}" alt="KSU Logo" 
+                <img src="{{ asset('assets/images/branding/ksu-alumni-logo.png') }}" alt="KSU Logo" 
                      onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Kalinga_State_University_logo.png/600px-Kalinga_State_University_logo.png'">
                 <div>
                     <span class="brand-text-main">KSU FEDERATED ALUMNI ASSOCIATION INC.</span>
@@ -260,7 +260,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link active" href="{{ url('/') }}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#events">Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#news">News</a></li> {{-- 🟢 Updated Link --}}
                     <li class="nav-item"><a class="nav-link" href="#benefits">Benefits</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                     
@@ -299,7 +299,6 @@
                 and give back to the community that built you.
             </p>
 
-            {{-- 🟢 SEARCH BAR (FUNCTIONAL) --}}
             <div class="hero-search-container">
                 <form action="{{ route('public.directory') }}" method="GET" class="hero-search-form">
                     <input type="text" name="search" class="form-control hero-search-input" 
@@ -312,7 +311,6 @@
                 </form>
             </div>
 
-            {{-- Links --}}
             <div class="d-flex justify-content-center flex-wrap mt-3 gap-4">
                 <a href="#benefits" class="text-white text-decoration-none fw-bold small text-uppercase" style="letter-spacing: 1px;">
                     <i class="fas fa-arrow-down me-1 text-warning"></i> Explore Benefits
@@ -325,6 +323,60 @@
             </div>
         </div>
     </section>
+
+    {{-- 🟢 NEWS & UPDATES SECTION (NEW) --}}
+    <section id="news" class="py-5" style="background-color: white;">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="section-badge">LATEST UPDATES</span>
+                <h2 class="section-title mb-0" style="margin-bottom: 10px !important;">News & Announcements</h2>
+                <p class="text-muted mt-3">Stay connected with what's happening at KSU.</p>
+            </div>
+
+            <div class="row g-4">
+                @forelse($news as $item)
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm border-0 benefit-card p-0" style="overflow: hidden;">
+                        {{-- Image --}}
+                        @if($item->image)
+                            <div style="height: 200px; overflow: hidden;">
+                                <img src="{{ asset('storage/' . $item->image) }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ $item->title }}">
+                            </div>
+                        @else
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-newspaper fa-3x text-muted"></i>
+                            </div>
+                        @endif
+
+                        {{-- Content --}}
+                        <div class="card-body p-4">
+                            <small class="text-warning fw-bold text-uppercase" style="font-size: 11px; letter-spacing: 1px;">
+                                {{ $item->created_at->format('M d, Y') }}
+                            </small>
+                            <h5 class="card-title mt-2 fw-bold" style="color: var(--ksu-green);">
+                                {{ \Illuminate\Support\Str::limit($item->title, 50) }}
+                            </h5>
+                            <p class="card-text text-muted small mt-3">
+                                {{ \Illuminate\Support\Str::limit(strip_tags($item->content), 90) }}
+                            </p>
+                            <a href="{{ route('news.show', $item->slug) }}" class="text-decoration-none fw-bold text-dark small mt-2 d-inline-block">
+                            READ MORE <i class="fas fa-arrow-right ms-1 text-warning"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="col-12 text-center py-5">
+                    <div class="p-4 bg-light rounded">
+                        <i class="fas fa-bullhorn fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No news updates posted yet. Check back soon!</p>
+                    </div>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
 
     {{-- MEMBERSHIP BENEFITS SECTION (ID: benefits) --}}
     <section id="benefits" class="benefits-section">
@@ -357,7 +409,7 @@
                 </div>
 
                 {{-- Card 3: University Events --}}
-                <div class="col-md-4" id="events"> {{-- ID added here for the Events Link --}}
+                <div class="col-md-4">
                     <div class="benefit-card shadow-sm">
                         <i class="fas fa-calendar-alt benefit-icon"></i>
                         <h4 class="fw-bold mb-3">University Events</h4>

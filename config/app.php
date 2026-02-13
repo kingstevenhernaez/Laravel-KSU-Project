@@ -120,16 +120,17 @@ return [
         Spatie\Permission\PermissionServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         PragmaRX\Google2FALaravel\ServiceProvider::class,
+        
+        // 🟢 ADDED: Intervention Image Provider
+        Intervention\Image\ImageServiceProvider::class,
 
         /*
          * Application Service Providers...
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        // TenancyServiceProvider WAS HERE - IT IS NOW REMOVED
     ],
 
     /*
@@ -140,6 +141,10 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         'DataTables' => Yajra\DataTables\Facades\DataTables::class,
         'Google2FA' => PragmaRX\Google2FALaravel\Facade::class,
+        
+        // 🟢 ADDED: Intervention Image Alias (So you can use Image::make)
+        'Image' => Intervention\Image\Facades\Image::class,
+        
     ])->toArray(),
 
 ];
