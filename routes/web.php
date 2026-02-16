@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\TracerController;
 use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Admin\EmailController;
 use App\Http\Controllers\Frontend\AlumniDirectoryController;
-use App\Models\News; // 🟢 ADDED: Import News Model
+use App\Models\News;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,15 +22,17 @@ use App\Models\News; // 🟢 ADDED: Import News Model
 |--------------------------------------------------------------------------
 */
 
-// 🟢 MODIFIED: Homepage now fetches News
 Route::get('/', function () { 
-    // Fetch latest 3 news items
     $news = News::latest()->take(3)->get();
-    
     return view('welcome', compact('news')); 
 })->name('index'); 
 
 Route::get('/alumni-directory', [AlumniDirectoryController::class, 'index'])->name('public.directory');
+
+// 🟢 PUBLIC CLAIM ROUTES
+Route::get('/claim-account', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'index'])->name('claim.account');
+Route::get('/claim-account/search', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'search'])->name('claim.search');
+Route::post('/claim-account/register', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'register'])->name('claim.register');
 
 Auth::routes();
 
@@ -42,7 +44,6 @@ Route::get('/home', function() {
     return redirect()->route('alumni.dashboard');
 })->name('home');
 
-// Route to view a single news article
 Route::get('/news/{slug}', function ($slug) {
     $newsItem = App\Models\News::where('slug', $slug)->firstOrFail();
     return view('news.show', compact('newsItem'));
@@ -55,7 +56,6 @@ Route::get('/news/{slug}', function ($slug) {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // Email Center Routes
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
 
@@ -64,8 +64,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         $total_users = DB::table('users')->count();
         $total_alumni = DB::table('users')->where('role', 2)->count(); 
         $pending_verify = DB::table('users')->whereNull('email_verified_at')->count();
-
-        // Pass empty events array to prevent dashboard crash if widget exists
         $events = [];
 
         return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify', 'events'));
@@ -94,12 +92,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store');
     Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy');
 
-    // Job Applicants Logic
     Route::get('jobs/{id}/applicants', [JobController::class, 'applicants'])->name('jobs.applicants');
     Route::post('jobs/applications/{applicationId}/update', [JobController::class, 'updateApplicationStatus'])
          ->name('jobs.application.status');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -107,7 +103,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function () {
-    
     Route::get('/events', [AlumniDashboardController::class, 'allEvents'])->name('events');
     Route::get('/dashboard', [AlumniDashboardController::class, 'index'])->name('dashboard');
     Route::get('/id-card', [AlumniIDController::class, 'show'])->name('id_card');
@@ -120,6 +115,3 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
 Route::middleware(['auth'])
      ->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])
      ->name('jobs.apply');
-
-
-
