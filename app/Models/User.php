@@ -28,7 +28,8 @@ class User extends Authenticatable
         'course',
         'department', // This column conflicts with the function below if not fixed
         'year_graduated',
-        'role',            
+        'role',     
+        'role_name',       
         'status',
         'is_alumni',
         'force_password_change',

@@ -3,7 +3,7 @@
     $userRoles = is_array(json_decode($rawRoles, true)) ? json_decode($rawRoles, true) : [$rawRoles];
     
     // Super Admin Check (Overrides everything)
-    $isSuperAdmin = Auth::user()->role == 1 || in_array('super_admin', $userRoles);
+    $isSuperAdmin = in_array('super_admin', $userRoles);
     
     // Control Center Permissions
     $canStaff   = $isSuperAdmin || in_array('manage_staff', $userRoles);
@@ -155,12 +155,22 @@
                     {{ $isSuperAdmin ? 'Super Admin' : 'Staff Member' }}
                 </small>
             </div>
-            <form action="{{ route('logout') }}" method="POST" class="ms-2">
-                @csrf
-                <button type="submit" class="btn btn-link p-0 text-white-50 hover-text-danger">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </form>
+            
+            {{-- 🟢 FIXED FOOTER LAYOUT --}}
+            <div class="ms-2 d-flex align-items-center">
+                <a href="{{ route('admin.profile.index') }}" class="btn btn-link p-0 text-white-50 hover-text-warning me-3" data-bs-toggle="tooltip" title="My Profile">
+                    <i class="fas fa-cog"></i>
+                </a>
+                
+                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-link p-0 text-white-50 hover-text-danger" data-bs-toggle="tooltip" title="Log Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+            {{-- 🔴 END FIXED FOOTER LAYOUT --}}
+
         </div>
     </div>
 </div>
@@ -171,4 +181,5 @@
     .custom-nav-pills .nav-link.active { background: #FFD700 !important; color: #004d00 !important; box-shadow: 0 10px 20px -5px rgba(255,215,0,0.4); font-weight: 700; }
     .custom-nav-pills .nav-link i { width: 20px; text-align: center; }
     .hover-text-danger:hover { color: #ff4d4d !important; }
+    .hover-text-warning:hover { color: #FFD700 !important; }
 </style>

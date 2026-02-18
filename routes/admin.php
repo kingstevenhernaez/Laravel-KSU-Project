@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\MisSyncController;
 use App\Http\Controllers\Admin\RoleManagementController;
+use App\Http\Controllers\Admin\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | 1. DASHBOARD
@@ -49,7 +50,11 @@ Route::delete('/alumni/{id}', [AlumniController::class, 'destroy'])->name('alumn
 Route::get('/staff', [RoleManagementController::class, 'index'])->name('roles.index');
 Route::get('/staff/create', [RoleManagementController::class, 'create'])->name('roles.create');
 Route::post('/staff/store', [RoleManagementController::class, 'store'])->name('roles.store');
-
+// 🟢 NEW: Edit, Update, Delete, and Change Password Routes
+Route::get('/staff/{id}/edit', [RoleManagementController::class, 'edit'])->name('roles.edit');
+Route::put('/staff/{id}', [RoleManagementController::class, 'update'])->name('roles.update');
+Route::delete('/staff/{id}', [RoleManagementController::class, 'destroy'])->name('roles.destroy');
+Route::put('/staff/{id}/password', [RoleManagementController::class, 'updatePassword'])->name('roles.password');
 /*
 |--------------------------------------------------------------------------
 | 4. EVENTS MANAGEMENT
@@ -99,3 +104,7 @@ Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
 Route::post('/news/store', [NewsController::class, 'store'])->name('news.store');
 Route::delete('/news/{id}', [NewsController::class, 'destroy'])->name('news.destroy');
+
+// 🟢 MY PROFILE & PASSWORD SETTINGS
+Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
