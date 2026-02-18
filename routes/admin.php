@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\EmailController;
 use App\Http\Controllers\Admin\EventController; 
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\MisSyncController;
-
+use App\Http\Controllers\Admin\RoleManagementController;
 /*
 |--------------------------------------------------------------------------
 | 1. DASHBOARD
@@ -44,6 +44,11 @@ Route::get('/alumni', [AlumniController::class, 'index'])->name('alumni.index');
 Route::get('/alumni/{id}', [AlumniController::class, 'show'])->name('alumni.show');
 Route::post('/alumni/status/{id}', [AlumniController::class, 'updateStatus'])->name('alumni.status');
 Route::delete('/alumni/{id}', [AlumniController::class, 'destroy'])->name('alumni.destroy');
+
+// 🟢 ROLE & STAFF MANAGEMENT
+Route::get('/staff', [RoleManagementController::class, 'index'])->name('roles.index');
+Route::get('/staff/create', [RoleManagementController::class, 'create'])->name('roles.create');
+Route::post('/staff/store', [RoleManagementController::class, 'store'])->name('roles.store');
 
 /*
 |--------------------------------------------------------------------------
