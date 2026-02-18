@@ -25,50 +25,96 @@
                         <input type="email" name="email" class="form-control" required>
                     </div>
 
-                    {{-- 🟢 CHECKBOXES FOR MULTIPLE ROLES --}}
-                    <div class="col-md-12 my-2">
+                    {{-- 🟢 GRANULAR PERMISSIONS CHECKBOXES --}}
+                    <div class="col-md-12 my-3">
                         <label class="form-label fw-bold text-success border-bottom pb-2 mb-3 d-block">
-                            <i class="fas fa-key me-2"></i>Assign Access Privileges (Select multiple)
+                            <i class="fas fa-key me-2"></i>Assign Specific Access Privileges
                         </label>
-                        <div class="row g-3">
+                        
+                        {{-- Super Admin Override --}}
+                        <div class="form-check p-3 border border-danger rounded-3 bg-danger bg-opacity-10 mb-4">
+                            <input class="form-check-input ms-0 me-2 border-danger" type="checkbox" name="role_name[]" value="super_admin" id="role_super">
+                            <label class="form-check-label fw-bold text-danger w-100" for="role_super">
+                                SUPER ADMIN <small class="fw-normal text-dark ms-2">(Grants access to absolutely everything)</small>
+                            </label>
+                        </div>
+
+                        <div class="row g-4">
+                            {{-- Control Center --}}
                             <div class="col-md-4">
-                                <div class="form-check p-3 border rounded-3 bg-light h-100">
-                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="role_name[]" value="super_admin" id="role1">
-                                    <label class="form-check-label fw-bold w-100" for="role1">Super Admin<br><small class="text-muted fw-normal">Full access to everything.</small></label>
+                                <div class="card h-100 border-0 shadow-sm rounded-4">
+                                    <div class="card-header bg-success text-white fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">CONTROL CENTER</div>
+                                    <div class="card-body bg-light">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="manage_staff" id="p_staff">
+                                            <label class="form-check-label" for="p_staff">Staff Management</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="mis_sync" id="p_mis">
+                                            <label class="form-check-label" for="p_mis">MIS Synchronization</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="alumni_list" id="p_alumni">
+                                            <label class="form-check-label" for="p_alumni">Master Alumni List</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="pending_claims" id="p_pending">
+                                            <label class="form-check-label" for="p_pending">Pending Claims</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {{-- Campus Engagement --}}
                             <div class="col-md-4">
-                                <div class="form-check p-3 border rounded-3 h-100">
-                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="role_name[]" value="registrar" id="role2">
-                                    <label class="form-check-label fw-bold w-100" for="role2">Registrar<br><small class="text-muted fw-normal">MIS Sync & Alumni List.</small></label>
+                                <div class="card h-100 border-0 shadow-sm rounded-4">
+                                    <div class="card-header bg-success text-white fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">CAMPUS ENGAGEMENT</div>
+                                    <div class="card-body bg-light">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="manage_events" id="p_events">
+                                            <label class="form-check-label" for="p_events">University Events</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="manage_news" id="p_news">
+                                            <label class="form-check-label" for="p_news">News & Announcements</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="manage_jobs" id="p_jobs">
+                                            <label class="form-check-label" for="p_jobs">Job Postings</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="tracer_analytics" id="p_tracer">
+                                            <label class="form-check-label" for="p_tracer">Tracer Analytics</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {{-- Communication --}}
                             <div class="col-md-4">
-                                <div class="form-check p-3 border rounded-3 h-100">
-                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="role_name[]" value="news_editor" id="role3">
-                                    <label class="form-check-label fw-bold w-100" for="role3">News Editor<br><small class="text-muted fw-normal">Events & News Management.</small></label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check p-3 border rounded-3 h-100">
-                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="role_name[]" value="career_coordinator" id="role4">
-                                    <label class="form-check-label fw-bold w-100" for="role4">Career Coordinator<br><small class="text-muted fw-normal">Jobs & Tracer Analytics.</small></label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check p-3 border rounded-3 h-100">
-                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="role_name[]" value="communications" id="role5">
-                                    <label class="form-check-label fw-bold w-100" for="role5">Communications<br><small class="text-muted fw-normal">Email Blast & History.</small></label>
+                                <div class="card h-100 border-0 shadow-sm rounded-4">
+                                    <div class="card-header bg-success text-white fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">COMMUNICATION</div>
+                                    <div class="card-body bg-light">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="email_blast" id="p_email">
+                                            <label class="form-check-label" for="p_email">New Email Blast</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="email_history" id="p_history">
+                                            <label class="form-check-label" for="p_history">History Log</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    {{-- 🔴 END GRANULAR PERMISSIONS --}}
 
-                    <div class="col-md-6">
+                    <div class="col-md-6 mt-4">
                         <label class="form-label fw-bold">Password</label>
                         <input type="password" name="password" class="form-control" required>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 mt-4">
                         <label class="form-label fw-bold">Confirm Password</label>
                         <input type="password" name="password_confirmation" class="form-control" required>
                     </div>

@@ -1,14 +1,27 @@
 @php
-    // 🟢 Read the DB roles and decode them. Fallback to array to prevent errors.
     $rawRoles = Auth::user()->role_name ?? '[]';
     $userRoles = is_array(json_decode($rawRoles, true)) ? json_decode($rawRoles, true) : [$rawRoles];
     
-    // 🟢 Establish true/false permissions for this user
-    $isSuperAdmin     = Auth::user()->role == 1 || in_array('super_admin', $userRoles);
-    $canViewRegistrar = $isSuperAdmin || in_array('registrar', $userRoles);
-    $canViewNews      = $isSuperAdmin || in_array('news_editor', $userRoles);
-    $canViewJobs      = $isSuperAdmin || in_array('career_coordinator', $userRoles);
-    $canViewComm      = $isSuperAdmin || in_array('communications', $userRoles);
+    // Super Admin Check (Overrides everything)
+    $isSuperAdmin = Auth::user()->role == 1 || in_array('super_admin', $userRoles);
+    
+    // Control Center Permissions
+    $canStaff   = $isSuperAdmin || in_array('manage_staff', $userRoles);
+    $canMis     = $isSuperAdmin || in_array('mis_sync', $userRoles);
+    $canAlumni  = $isSuperAdmin || in_array('alumni_list', $userRoles);
+    $canPending = $isSuperAdmin || in_array('pending_claims', $userRoles);
+    
+    // Campus Engagement Permissions
+    $canEvents  = $isSuperAdmin || in_array('manage_events', $userRoles);
+    $canNews    = $isSuperAdmin || in_array('manage_news', $userRoles);
+    $canJobs    = $isSuperAdmin || in_array('manage_jobs', $userRoles);
+    $canTracer  = $isSuperAdmin || in_array('tracer_analytics', $userRoles);
+    $showCampusSection = $canEvents || $canNews || $canJobs || $canTracer;
+    
+    // Communication Permissions
+    $canEmail   = $isSuperAdmin || in_array('email_blast', $userRoles);
+    $canHistory = $isSuperAdmin || in_array('email_history', $userRoles);
+    $showCommSection = $canEmail || $canHistory;
 @endphp
 
 <div class="ksu-sidebar d-flex flex-column flex-shrink-0 p-3 text-white" style="width: 280px; min-height: 100vh; background: linear-gradient(180deg, #004d00 0%, #0a3d0a 100%); position: relative;">
@@ -34,7 +47,7 @@
             </a>
         </li>
 
-        @if($isSuperAdmin)
+        @if($canStaff)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.roles.index') }}" class="nav-link text-white {{ Request::is('admin/staff*') || Request::is('admin/roles*') ? 'active' : '' }}">
                 <i class="fas fa-user-shield me-3"></i> Staff Management
@@ -42,17 +55,23 @@
         </li>
         @endif
 
-        @if($canViewRegistrar)
+        @if($canMis)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.mis_sync.index') }}" class="nav-link text-white {{ Request::is('admin/mis-sync*') ? 'active' : '' }}">
                 <i class="fas fa-database me-3"></i> MIS Synchronization
             </a>
         </li>
+        @endif
+
+        @if($canAlumni)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.alumni.index') }}" class="nav-link text-white {{ Request::is('admin/alumni') ? 'active' : '' }}">
                 <i class="fas fa-user-graduate me-3"></i> Master Alumni List
             </a>
         </li>
+        @endif
+
+        @if($canPending)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.alumni.pending') }}" class="nav-link text-white {{ Request::is('admin/alumni/pending') ? 'active' : '' }}">
                 <div class="d-flex justify-content-between align-items-center w-100">
@@ -63,17 +82,20 @@
         </li>
         @endif
 
-        @if($canViewNews || $canViewJobs)
+        @if($showCampusSection)
         <hr class="border-light opacity-10 my-4">
         <li class="nav-label text-uppercase text-white-50 fw-bold mb-2 ps-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Campus Engagement</li>
         @endif
 
-        @if($canViewNews)
+        @if($canEvents)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.events.index') }}" class="nav-link text-white {{ Request::is('admin/events*') ? 'active' : '' }}">
                 <i class="fas fa-calendar-check me-3"></i> University Events
             </a>
         </li>
+        @endif
+
+        @if($canNews)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.news.index') }}" class="nav-link text-white {{ Request::is('admin/news*') ? 'active' : '' }}">
                 <i class="fas fa-bullhorn me-3"></i> News & Announcements
@@ -81,12 +103,15 @@
         </li>
         @endif
 
-        @if($canViewJobs)
+        @if($canJobs)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.jobs.index') }}" class="nav-link text-white {{ Request::is('admin/jobs*') ? 'active' : '' }}">
                 <i class="fas fa-briefcase me-3"></i> Job Postings
             </a>
         </li>
+        @endif
+
+        @if($canTracer)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.tracer.index') }}" class="nav-link text-white {{ Request::is('admin/tracer*') ? 'active' : '' }}">
                 <i class="fas fa-analytics me-3"></i> Tracer Analytics
@@ -94,20 +119,25 @@
         </li>
         @endif
 
-        @if($canViewComm)
+        @if($showCommSection)
         <hr class="border-light opacity-10 my-4">
         <li class="nav-label text-uppercase text-white-50 fw-bold mb-2 ps-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Communication</li>
 
+        @if($canEmail)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.messages.create') }}" class="nav-link text-white {{ Request::is('admin/messages/create') ? 'active' : '' }}">
                 <i class="fas fa-paper-plane me-3"></i> New Email Blast
             </a>
         </li>
+        @endif
+
+        @if($canHistory)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.messages.sent') }}" class="nav-link text-white {{ Request::is('admin/messages/sent') ? 'active' : '' }}">
                 <i class="fas fa-envelope-open-text me-3"></i> History Log
             </a>
         </li>
+        @endif
         @endif
     </ul>
 

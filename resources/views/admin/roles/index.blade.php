@@ -30,7 +30,7 @@
                         <tr>
                             <th class="px-4 py-3">Staff Profile</th>
                             <th class="py-3">Email Address</th>
-                            <th class="py-3">Access Privilege</th>
+                            <th class="py-3" style="max-width: 300px;">Access Privileges</th>
                             <th class="py-3 text-center">Date Added</th>
                         </tr>
                     </thead>
@@ -50,27 +50,27 @@
                             <td class="text-muted">{{ $user->email }}</td>
                             
                             {{-- 🟢 ACCESS PRIVILEGE COLUMN --}}
-                            <td>
+                            <td style="max-width: 300px;">
                                 @php
                                     $raw = $user->role_name ?? '[]';
                                     $decoded = json_decode($raw, true);
                                     $userRoles = is_array($decoded) ? $decoded : [$raw];
                                 @endphp
 
-                                {{-- If Role is 1 OR array contains super_admin, show the red badge --}}
                                 @if($user->role == 1 || in_array('super_admin', $userRoles))
                                     <span class="badge bg-danger px-3 py-2 rounded-pill text-uppercase fw-bold" style="font-size: 0.7rem;">
                                         <i class="fas fa-star me-1"></i> Super Admin
                                     </span>
                                 @else
-                                    {{-- Otherwise, print a badge for every role they have --}}
-                                    @foreach($userRoles as $role)
-                                        @if(!empty($role) && $role !== '[]')
-                                        <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-2 text-uppercase fw-bold mb-1 d-inline-block" style="font-size: 0.65rem;">
-                                            {{ str_replace('_', ' ', $role) }}
-                                        </span>
-                                        @endif
-                                    @endforeach
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($userRoles as $role)
+                                            @if(!empty($role) && $role !== '[]')
+                                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-2 fw-bold" style="font-size: 0.65rem;">
+                                                {{ ucwords(str_replace('_', ' ', $role)) }}
+                                            </span>
+                                            @endif
+                                        @endforeach
+                                    </div>
                                 @endif
                             </td>
                             
@@ -78,8 +78,6 @@
                                 {{ \Carbon\Carbon::parse($user->created_at)->format('M d, Y') }}
                             </td>
                         </tr>
-                        
-                        {{-- 🔴 THIS @empty BLOCK WAS MISSING IN YOUR ERROR LOG --}}
                         @empty
                         <tr>
                             <td colspan="4" class="text-center py-5 text-muted">
