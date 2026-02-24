@@ -131,6 +131,12 @@
         </li>
         @endif
 
+        <li class="nav-item mb-2">
+            <a href="{{ route('admin.reports.index') }}" class="nav-link text-white {{ Request::is('admin/reports*') ? 'active' : '' }}">
+                <i class="fas fa-print me-3"></i> Reports & Printing
+            </a>
+        </li>
+
       @if($showCommSection)
         <hr class="border-light opacity-10 my-4">
         <li class="nav-label text-uppercase text-white-50 fw-bold mb-2 ps-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Communication</li>

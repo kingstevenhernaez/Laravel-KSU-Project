@@ -57,6 +57,7 @@ Route::get('/news/{slug}', function ($slug) {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
+
     // Email Center Routes
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
@@ -80,6 +81,14 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
         return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData'));
     })->name('dashboard');
+
+    // Reporting Engine
+    Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/print', [\App\Http\Controllers\Admin\ReportController::class, 'print'])->name('reports.print');
+
+    // 🟢 NEW: AJAX Routes for massive database dropdowns
+    Route::get('/reports/api/courses', [\App\Http\Controllers\Admin\ReportController::class, 'searchCourses'])->name('reports.api.courses');
+    Route::get('/reports/api/batches', [\App\Http\Controllers\Admin\ReportController::class, 'searchBatches'])->name('reports.api.batches');
     
     // 🟢 NEW: Pending Claims Route (Reuses Alumni view but filters status = 0)
     Route::get('/pending-claims', function () {

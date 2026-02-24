@@ -60,4 +60,11 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+
+    public function misRecord()
+    {
+        // Links the 'student_id' in the users table to the 'student_id' in mis_alumni_records
+        return $this->hasOne(\App\Models\MisAlumniRecord::class, 'student_id', 'student_id');
+    }
 }
