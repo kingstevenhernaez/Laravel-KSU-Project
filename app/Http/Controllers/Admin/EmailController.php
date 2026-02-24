@@ -24,11 +24,22 @@ class EmailController extends Controller
         return view('admin.emails.index', compact('history'));
     }
 
+    // 🟢 THE FIX: Catch any stray links asking for 'sentBox' and send them to 'index'
+    public function sentBox(Request $request)
+    {
+        return $this->index($request);
+    }
+
     // 🟢 Display the Compose/New Blast Form
     public function create()
     {
-        // This MUST return the create view, not the index view
-        return view('admin.emails.create');
+        // Fetch all verified alumni to populate the dropdown
+        $alumni = User::where('role', 2)
+                      ->where('status', 1)
+                      ->orderBy('first_name', 'asc')
+                      ->get();
+
+        return view('admin.emails.create', compact('alumni'));
     }
 
     // 🟢 Handle the Actual Sending & Recording

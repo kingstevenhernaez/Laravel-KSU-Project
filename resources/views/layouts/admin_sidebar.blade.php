@@ -131,13 +131,14 @@
         </li>
         @endif
 
-        @if($showCommSection)
+      @if($showCommSection)
         <hr class="border-light opacity-10 my-4">
         <li class="nav-label text-uppercase text-white-50 fw-bold mb-2 ps-3" style="font-size: 0.7rem; letter-spacing: 1.5px;">Communication</li>
 
         @if($canEmail)
         <li class="nav-item mb-2">
-            <a href="{{ route('admin.messages.create') }}" class="nav-link text-white {{ Request::is('admin/messages/create') ? 'active' : '' }}">
+            {{-- 🟢 Fixed Route Name --}}
+            <a href="{{ route('admin.emails.create') }}" class="nav-link text-white {{ Request::is('admin/email-center/create') ? 'active' : '' }}">
                 <i class="fas fa-paper-plane me-3"></i> New Email Blast
             </a>
         </li>
@@ -145,7 +146,8 @@
 
         @if($canHistory)
         <li class="nav-item mb-2">
-            <a href="{{ route('admin.messages.sent') }}" class="nav-link text-white {{ Request::is('admin/messages/sent') ? 'active' : '' }}">
+            {{-- 🟢 Fixed Route Name --}}
+            <a href="{{ route('admin.emails.index') }}" class="nav-link text-white {{ Request::is('admin/email-center') ? 'active' : '' }}">
                 <i class="fas fa-envelope-open-text me-3"></i> History Log
             </a>
         </li>
