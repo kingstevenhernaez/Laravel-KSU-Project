@@ -72,18 +72,25 @@
         @endif
 
         @if($canPending)
-      <a href="{{ route('admin.masterlist') }}" class="nav-link text-white">
-    <i class="fas fa-user-clock me-2"></i> Pending Claims
-    
-    {{-- 🟢 DYNAMIC BADGE: Counts pending users (status = 0) and hides if zero --}}
-    @php 
-        $sidebarPendingCount = \App\Models\User::where('status', 0)->count(); 
-    @endphp
-    
-    @if($sidebarPendingCount > 0)
-        <span class="badge bg-warning text-dark rounded-circle ms-2">{{ $sidebarPendingCount }}</span>
-    @endif
-</a>
+        <li class="nav-item mb-2">
+            {{-- 🟢 Perfectly maps to our newly created route --}}
+            <a href="{{ route('admin.claims.index') }}" class="nav-link text-white {{ Request::is('admin/pending-claims*') ? 'active' : '' }}">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div>
+                        <i class="fas fa-user-clock me-3"></i> Pending Claims
+                    </div>
+                    
+                    {{-- DYNAMIC BADGE --}}
+                    @php 
+                        $sidebarPendingCount = \App\Models\User::where('status', 0)->count(); 
+                    @endphp
+                    
+                    @if($sidebarPendingCount > 0)
+                        <span class="badge bg-warning text-dark rounded-pill">{{ $sidebarPendingCount }}</span>
+                    @endif
+                </div>
+            </a>
+        </li>
         @endif
 
         @if($showCampusSection)
@@ -115,10 +122,11 @@
         </li>
         @endif
 
-        @if($canTracer)
+       @if($canTracer)
         <li class="nav-item mb-2">
+            {{-- 🟢 ADDED ICON: fa-chart-line --}}
             <a href="{{ route('admin.tracer.index') }}" class="nav-link text-white {{ Request::is('admin/tracer*') ? 'active' : '' }}">
-                <i class="fas fa-analytics me-3"></i> Tracer Analytics
+                <i class="fas fa-chart-line me-3"></i> Tracer Analytics
             </a>
         </li>
         @endif
@@ -160,7 +168,6 @@
                 </small>
             </div>
             
-            {{-- 🟢 FIXED FOOTER LAYOUT --}}
             <div class="ms-2 d-flex align-items-center">
                 <a href="{{ route('admin.profile.index') }}" class="btn btn-link p-0 text-white-50 hover-text-warning me-3" data-bs-toggle="tooltip" title="My Profile">
                     <i class="fas fa-cog"></i>
@@ -173,8 +180,6 @@
                     </button>
                 </form>
             </div>
-            {{-- 🔴 END FIXED FOOTER LAYOUT --}}
-
         </div>
     </div>
 </div>

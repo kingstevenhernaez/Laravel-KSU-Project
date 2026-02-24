@@ -15,7 +15,7 @@ use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Admin\EmailController;
 use App\Http\Controllers\Frontend\AlumniDirectoryController;
 use App\Models\News;
-use App\Models\User; // Added User model for the dashboard queries
+use App\Models\User; 
 
 /*
 |--------------------------------------------------------------------------
@@ -57,14 +57,12 @@ Route::get('/news/{slug}', function ($slug) {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
+    // Email Center Routes
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
     Route::get('email-center/create', [EmailController::class, 'create'])->name('emails.create');
     
-    Route::get('email-center', [EmailController::class, 'sentBox'])->name('emails.index');
-
-
-    // 🟢 BULLETPROOF DASHBOARD ROUTE (Logic moved directly here)
+    // Dashboard Route
     Route::get('/dashboard', function () {
         $verifiedCount = User::where('status', 1)->count();
         $pendingCount  = User::where('status', 0)->count();
@@ -83,7 +81,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData'));
     })->name('dashboard');
     
-    // 🟢 BULLETPROOF ALUMNI LIST ROUTES
+    // 🟢 NEW: Pending Claims Route (Reuses Alumni view but filters status = 0)
+    Route::get('/pending-claims', function () {
+        $alumni = User::where('role', 2)->where('status', 0)->orderBy('created_at', 'desc')->paginate(10);
+        return view('admin.alumni.index', compact('alumni'));
+    })->name('claims.index');
+
+    // Masterlist Routes
     Route::get('/masterlist', function () {
         $alumni = User::where('role', 2)->orderBy('created_at', 'desc')->paginate(10);
         return view('admin.alumni.index', compact('alumni'));
