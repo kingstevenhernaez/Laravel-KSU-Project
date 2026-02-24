@@ -10,12 +10,13 @@ return new class extends Migration
      * Run the migrations.
      */
 public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        // 1 = Super Admin, 2 = Alumni, 3 = Staff/Sub-Admin
-        $table->string('role_name')->default('alumni')->after('role'); 
-    });
-}
+    {
+        // 🟢 FIX: Only add the column if it doesn't already exist!
+        if (!Schema::hasColumn('users', 'role_name')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('role_name')->default('alumni')->after('role');
+            });
+        }
 
     /**
      * Reverse the migrations.
