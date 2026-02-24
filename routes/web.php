@@ -59,6 +59,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
+    Route::get('email-center/create', [EmailController::class, 'create'])->name('emails.create');
+    
+    Route::get('email-center', [EmailController::class, 'sentBox'])->name('emails.index');
+
 
     // 🟢 BULLETPROOF DASHBOARD ROUTE (Logic moved directly here)
     Route::get('/dashboard', function () {

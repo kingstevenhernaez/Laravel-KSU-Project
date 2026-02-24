@@ -9,14 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-public function up(): void
+    public function up(): void
     {
-        // 🟢 FIX: Only add the column if it doesn't already exist!
         if (!Schema::hasColumn('users', 'role_name')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->string('role_name')->default('alumni')->after('role');
             });
         }
+    }
 
     /**
      * Reverse the migrations.
@@ -24,7 +24,9 @@ public function up(): void
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('users', 'role_name')) {
+                $table->dropColumn('role_name');
+            }
         });
     }
 };
