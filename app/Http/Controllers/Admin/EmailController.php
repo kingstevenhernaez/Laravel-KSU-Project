@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class EmailController extends Controller
 {
-    // 🟢 Display the History List
+    // Display the History List
     public function index(Request $request)
     {
         $query = DB::table('email_logs')->orderBy('sent_at', 'desc');
@@ -24,13 +24,13 @@ class EmailController extends Controller
         return view('admin.emails.index', compact('history'));
     }
 
-    // 🟢 THE FIX: Catch any stray links asking for 'sentBox' and send them to 'index'
+    // Catch any stray links asking for 'sentBox'
     public function sentBox(Request $request)
     {
         return $this->index($request);
     }
 
-    // 🟢 Display the Compose/New Blast Form
+    // Display the Compose/New Blast Form
     public function create()
     {
         // Fetch all verified alumni to populate the dropdown
@@ -42,35 +42,48 @@ class EmailController extends Controller
         return view('admin.emails.create', compact('alumni'));
     }
 
-    // 🟢 Handle the Actual Sending & Recording
+    // 🟢 Upgraded Sending Logic with HTML and Attachments
     public function send(Request $request)
     {
         $request->validate([
             'subject' => 'required|string|max:255',
             'message' => 'required',
-            'recipient_type' => 'required' 
+            'recipient_type' => 'required',
+            'attachment' => 'nullable|file|max:5120', // 5MB max
         ]);
 
         $subject = $request->subject;
         $content = $request->message;
+        $file = $request->file('attachment');
 
         // Determine who gets the email
         if ($request->recipient_type === 'all') {
-            $recipients = User::where('role', 2)->pluck('email');
-            $logRecipient = "All Alumni (" . $recipients->count() . ")";
+            // Only pull verified active alumni
+            $recipients = User::where('role', 2)->where('status', 1)->pluck('email');
+            $logRecipient = "All Verified Alumni (" . $recipients->count() . ")";
         } else {
             $recipients = [$request->specific_email];
             $logRecipient = $request->specific_email;
         }
 
-        // Send logic (Ensure your .env SMTP is configured)
+        // Send logic
         foreach ($recipients as $email) {
-            Mail::raw($content, function ($message) use ($email, $subject) {
+            
+            // 🟢 Changed from Mail::raw to Mail::html to support WYSIWYG tags
+            Mail::html($content, function ($message) use ($email, $subject, $file) {
                 $message->to($email)->subject($subject);
+                
+                // 🟢 Attach file if one was uploaded
+                if ($file) {
+                    $message->attach($file->getRealPath(), [
+                        'as' => $file->getClientOriginalName(),
+                        'mime' => $file->getClientMimeType(),
+                    ]);
+                }
             });
         }
 
-        // Record in the Sent Box (History)
+        // Record in the Sent Box
         DB::table('email_logs')->insert([
             'subject' => $subject,
             'message' => $content,
@@ -80,6 +93,6 @@ class EmailController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect()->route('admin.emails.index')->with('success', 'Email blast sent and recorded!');
+        return redirect()->route('admin.emails.index')->with('success', 'Email blast with attachments sent successfully!');
     }
 }
