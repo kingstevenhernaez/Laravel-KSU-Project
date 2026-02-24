@@ -119,17 +119,23 @@
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <div>
+                                        {{-- 🟢 Removed Email display for privacy --}}
                                         <div class="fw-bold text-dark">{{ $alum->first_name }} {{ $alum->last_name }}</div>
-                                        <small class="text-muted" style="font-size: 11px;">{{ $alum->email }}</small>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                {{ $alum->department->name ?? 'Course Not Set' }}
+                                {{-- 🟢 Dynamically pulls course from MIS record or User table --}}
+                                {{ $alum->misRecord->course ?? ($alum->department->name ?? ($alum->course ?? 'Course Not Set')) }}
                             </td>
                             <td class="text-center">
-                                @if($alum->batch)
-                                    <span class="badge bg-warning text-dark">{{ $alum->batch }}</span>
+                                {{-- 🟢 Dynamically pulls graduation year from MIS record or User table --}}
+                                @php 
+                                    $gradYear = $alum->misRecord->year_graduated ?? ($alum->batch ?? ($alum->year_graduated ?? null)); 
+                                @endphp
+
+                                @if($gradYear)
+                                    <span class="badge bg-warning text-dark px-3 py-2">{{ $gradYear }}</span>
                                 @else
                                     <span class="text-muted small">N/A</span>
                                 @endif
@@ -140,7 +146,7 @@
                 </table>
             </div>
 
-            {{-- 🟢 PAGINATION LINKS --}}
+            {{-- PAGINATION LINKS --}}
             <div class="mt-4">
                 {{ $alumni->withQueryString()->links() }}
             </div>
