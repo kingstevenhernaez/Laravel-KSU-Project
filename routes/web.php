@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Admin\EmailController;
 use App\Http\Controllers\Frontend\AlumniDirectoryController;
 use App\Models\News;
+use App\Models\User; // Added User model for the dashboard queries
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ Route::get('/', function () {
 
 Route::get('/alumni-directory', [AlumniDirectoryController::class, 'index'])->name('public.directory');
 
-// 🟢 PUBLIC CLAIM ROUTES
+// PUBLIC CLAIM ROUTES
 Route::get('/claim-account', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'index'])->name('claim.account');
 Route::get('/claim-account/search', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'search'])->name('claim.search');
 Route::post('/claim-account/register', [\App\Http\Controllers\Auth\ClaimAccountController::class, 'register'])->name('claim.register');
@@ -59,38 +60,56 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
 
+    // 🟢 BULLETPROOF DASHBOARD ROUTE (Logic moved directly here)
     Route::get('/dashboard', function () {
-        $alumni = DB::table('users')->orderBy('created_at', 'desc')->take(5)->get();
-        $total_users = DB::table('users')->count();
-        $total_alumni = DB::table('users')->where('role', 2)->count(); 
-        $pending_verify = DB::table('users')->whereNull('email_verified_at')->count();
-        $events = [];
+        $verifiedCount = User::where('status', 1)->count();
+        $pendingCount  = User::where('status', 0)->count();
+        $totalUsers    = User::count();
+        $recentUsers   = User::orderBy('created_at', 'desc')->take(5)->get();
 
-        return view('admin.dashboard', compact('alumni', 'total_users', 'total_alumni', 'pending_verify', 'events'));
+        $employmentData = User::select('employment_status', DB::raw('count(*) as total'))
+            ->whereNotNull('employment_status')->where('employment_status', '!=', '')
+            ->groupBy('employment_status')->pluck('total', 'employment_status')->toArray();
+
+        $batchData = User::select('batch', DB::raw('count(*) as total'))
+            ->whereNotNull('batch')->where('batch', '!=', '')
+            ->groupBy('batch')->orderBy('total', 'desc')->take(5)
+            ->pluck('total', 'batch')->toArray();
+
+        return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData'));
     })->name('dashboard');
+    
+    // 🟢 BULLETPROOF ALUMNI LIST ROUTES
+    Route::get('/masterlist', function () {
+        $alumni = User::where('role', 2)->orderBy('created_at', 'desc')->paginate(10);
+        return view('admin.alumni.index', compact('alumni'));
+    })->name('masterlist');
 
     Route::get('/alumni', function () {
-        $alumni = DB::table('users')->orderBy('created_at', 'desc')->get();
-        return view('admin.alumni.index', ['alumni' => $alumni]);
+        $alumni = User::where('role', 2)->orderBy('created_at', 'desc')->paginate(10);
+        return view('admin.alumni.index', compact('alumni'));
     })->name('alumni.index');
+
+    Route::post('alumni/status/{id}', function ($id) {
+        $user = User::findOrFail($id);
+        $user->status = ($user->status == 1) ? 0 : 1;
+        $user->save();
+        $message = ($user->status == 1) ? 'Alumni approved successfully!' : 'Alumni account deactivated.';
+        return redirect()->back()->with('success', $message);
+    })->name('alumni.status');
 
     Route::get('alumni/{id}', [AlumniController::class, 'show'])->name('alumni.show');
     Route::delete('alumni/{id}', [AlumniController::class, 'destroy'])->name('alumni.destroy');
 
-    Route::post('alumni/status/{id}', function ($id) {
-        $user = DB::table('users')->where('id', $id)->first();
-        if ($user) {
-            $newStatus = ($user->status == 1) ? 0 : 1;
-            DB::table('users')->where('id', $id)->update(['status' => $newStatus]);
-        }
-        return back()->with('success', 'Status updated successfully!');
-    })->name('alumni.status');
-
     Route::resource('jobs', JobController::class);
 
+    // Tracer Study Routes
     Route::get('/tracer', [TracerController::class, 'index'])->name('tracer.index');
-    Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store');
-    Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy');
+    Route::get('/tracer/create', [TracerController::class, 'create'])->name('tracer.create'); 
+    Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store'); 
+    Route::get('/tracer/{id}', [TracerController::class, 'show'])->name('tracer.show'); 
+    Route::get('/tracer/export/{id}', [TracerController::class, 'exportAnswers'])->name('tracer.export');
+    Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy'); 
 
     Route::get('jobs/{id}/applicants', [JobController::class, 'applicants'])->name('jobs.applicants');
     Route::post('jobs/applications/{applicationId}/update', [JobController::class, 'updateApplicationStatus'])
@@ -110,6 +129,9 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+
+    Route::get('/tracer/{id}', [\App\Http\Controllers\Alumni\TracerController::class, 'show'])->name('tracer.show');
+    Route::post('/tracer/{id}', [\App\Http\Controllers\Alumni\TracerController::class, 'store'])->name('tracer.store');
 });
 
 Route::middleware(['auth'])

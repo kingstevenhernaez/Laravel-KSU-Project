@@ -131,7 +131,7 @@
                                     Lou Marshal M. Banggawan
                                 </span>
                             </div>
-                            <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-size: 12px;">Alumni Center Director</h6>
+                            <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-size: 12px;">University Chair, Alumni Affairs</h6>
                             <small class="text-muted" style="font-size: 10px;">Signatory</small>
                         </div>
                         

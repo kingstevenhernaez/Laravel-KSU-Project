@@ -130,7 +130,7 @@
                 <div class="card-body text-center py-5 d-flex flex-column justify-content-center align-items-center">
                     <div class="rounded-circle bg-light border d-inline-flex justify-content-center align-items-center mb-3 shadow-sm" style="width: 90px; height: 90px;">
                         @if(Auth::user()->image)
-                            <img src="{{ asset(Auth::user()->image) }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                          <img src="{{ asset('storage/' . Auth::user()->image) }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                         @else
                             <i class="fas fa-user-graduate fa-3x text-secondary"></i>
                         @endif

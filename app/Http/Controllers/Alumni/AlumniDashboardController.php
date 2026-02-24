@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\JobPost; 
-use App\Models\Event; // 🟢 ADDED: Import the Event model
+use App\Models\Event; 
 
 class AlumniDashboardController extends Controller
 {
@@ -20,7 +20,7 @@ class AlumniDashboardController extends Controller
             return redirect()->route('login');
         }
 
-        // 🟢 JOB LOGIC
+        // JOB LOGIC
         $jobs = [];
         if (Schema::hasTable('job_posts')) {
             $jobs = DB::table('job_posts')
@@ -30,7 +30,7 @@ class AlumniDashboardController extends Controller
                         ->get();
         }
 
-        // 🟢 ADDED: EVENT LOGIC
+        // EVENT LOGIC
         // We only show events that are scheduled for today or in the future
         $events = [];
         if (Schema::hasTable('events')) {
@@ -40,30 +40,25 @@ class AlumniDashboardController extends Controller
                            ->get();
         }
 
-        // 🟢 TRACER STUDY LOGIC
+        // 🟢 NEW: TRACER STUDY LOGIC (Dynamic Surveys)
         $activeSurveyId = null;
         $pendingSurveys = 0;
 
-        if (Schema::hasTable('tracer_surveys') && Schema::hasTable('tracer_answers')) {
-            $activeSurvey = DB::table('tracer_surveys')
-                                ->where('status', 1)
-                                ->orderBy('created_at', 'desc')
-                                ->first();
+        // Fetch the latest active survey from the new 'surveys' table
+        $latestSurvey = \App\Models\Survey::where('is_active', 1)->latest()->first();
 
-            if ($activeSurvey) {
-                $activeSurveyId = $activeSurvey->id;
-                $hasAnswered = DB::table('tracer_answers')
-                                ->where('survey_id', $activeSurvey->id)
-                                ->where('user_id', $user->id)
-                                ->exists();
-
-                if (!$hasAnswered) {
-                    $pendingSurveys = 1;
-                }
+        if ($latestSurvey) {
+            // Check if the current user has answered it
+            $hasAnswered = \App\Models\SurveyAnswer::where('survey_id', $latestSurvey->id)
+                                                 ->where('user_id', $user->id)
+                                                 ->exists();
+            
+            if (!$hasAnswered) {
+                $pendingSurveys = 1;
+                $activeSurveyId = $latestSurvey->id;
             }
         }
 
-        // 🟢 ADDED: 'events' to the compact list
         return view('alumni.dashboard', compact('user', 'jobs', 'pendingSurveys', 'activeSurveyId', 'events'));
     }
 
@@ -71,13 +66,13 @@ class AlumniDashboardController extends Controller
      * Dedicated page to view all events
      */
    public function allEvents()
-{
-    $user = Auth::user();
-    // Fetch all events, paginated
-    $events = \App\Models\Event::orderBy('date', 'desc')->paginate(12);
-    
-    return view('alumni.events.index', compact('user', 'events'));
-}
+    {
+        $user = Auth::user();
+        // Fetch all events, paginated
+        $events = \App\Models\Event::orderBy('date', 'desc')->paginate(12);
+        
+        return view('alumni.events.index', compact('user', 'events'));
+    }
 
     public function jobs()
     {

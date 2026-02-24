@@ -1,4 +1,6 @@
-@extends('layouts.admin') @section('content')
+@extends('layouts.admin') 
+
+@section('content')
 <div class="container-fluid py-4">
     <h2 class="fw-bold mb-4"><i class="fas fa-sync-alt text-success me-2"></i> MIS Data Synchronization</h2>
 
@@ -46,7 +48,39 @@
         </div>
     </div>
 
-    {{-- Upload Section --}}
+    {{-- 🟢 NEW: Live API Sync Section --}}
+    <div class="card shadow-sm border-0 mb-4 border-success border-start border-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold text-success"><i class="fas fa-cloud-download-alt me-2"></i> Live API Sync</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-6 border-end">
+                    <p class="text-muted">Instantly pull and stage a specific student or alumni record directly from the KSU MIS system.</p>
+                    <form action="{{ route('admin.mis_sync.api') }}" method="POST">
+                        @csrf
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-light fw-bold" id="basic-addon1">ID Number</span>
+                            <input type="text" class="form-control" name="id_number" placeholder="e.g., 18-11013" required aria-describedby="basic-addon1">
+                        </div>
+                        <button type="submit" class="btn btn-success fw-bold">
+                            <i class="fas fa-sync-alt me-2"></i> Sync from API
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-6 ps-md-4 mt-4 mt-md-0">
+                    <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-primary"></i>How it works</h6>
+                    <ul class="small text-muted mb-0 ps-3">
+                        <li>Enter a valid KSU ID Number.</li>
+                        <li>The system will fetch their full name, course, and year.</li>
+                        <li><b>Note:</b> Birthdates are currently set to a default value until the API update is completed.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Upload Section (Now the Fallback) --}}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white border-bottom py-3">
             <h5 class="mb-0 fw-bold">Manual CSV Sync (Fallback)</h5>
@@ -54,15 +88,15 @@
         <div class="card-body p-4">
             <div class="row">
                 <div class="col-md-6 border-end">
-                    <p class="text-muted">While waiting for the active MIS API, use this tool to upload exported lists of graduates from the Registrar.</p>
+                    <p class="text-muted">Use this tool to bulk upload exported lists of graduates from the Registrar if the API is unavailable.</p>
                     <form action="{{ route('admin.mis_sync.upload') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-bold">Select CSV File</label>
                             <input class="form-control" type="file" name="csv_file" accept=".csv" required>
                         </div>
-                        <button type="submit" class="btn btn-success fw-bold">
-                            <i class="fas fa-upload me-2"></i> Upload & Sync Data
+                        <button type="submit" class="btn btn-secondary fw-bold">
+                            <i class="fas fa-upload me-2"></i> Upload & Sync CSV
                         </button>
                     </form>
                 </div>
@@ -117,7 +151,7 @@
                         @empty
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">
-                                No records staged yet. Please upload a CSV to begin.
+                                No records staged yet. Use the API Sync or upload a CSV to begin.
                             </td>
                         </tr>
                         @endforelse

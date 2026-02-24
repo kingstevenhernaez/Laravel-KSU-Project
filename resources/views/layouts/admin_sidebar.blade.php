@@ -72,14 +72,18 @@
         @endif
 
         @if($canPending)
-        <li class="nav-item mb-2">
-            <a href="{{ route('admin.alumni.pending') }}" class="nav-link text-white {{ Request::is('admin/alumni/pending') ? 'active' : '' }}">
-                <div class="d-flex justify-content-between align-items-center w-100">
-                    <span><i class="fas fa-id-badge me-3"></i> Pending Claims</span>
-                    <span class="badge rounded-pill bg-warning text-dark" style="font-size: 0.65rem;">3</span>
-                </div>
-            </a>
-        </li>
+      <a href="{{ route('admin.masterlist') }}" class="nav-link text-white">
+    <i class="fas fa-user-clock me-2"></i> Pending Claims
+    
+    {{-- 🟢 DYNAMIC BADGE: Counts pending users (status = 0) and hides if zero --}}
+    @php 
+        $sidebarPendingCount = \App\Models\User::where('status', 0)->count(); 
+    @endphp
+    
+    @if($sidebarPendingCount > 0)
+        <span class="badge bg-warning text-dark rounded-circle ms-2">{{ $sidebarPendingCount }}</span>
+    @endif
+</a>
         @endif
 
         @if($showCampusSection)

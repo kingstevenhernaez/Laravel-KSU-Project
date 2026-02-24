@@ -33,6 +33,8 @@ Route::get('/dashboard', function () {
 Route::get('/mis-sync', [MisSyncController::class, 'index'])->name('mis_sync.index');
 Route::post('/mis-sync/upload', [MisSyncController::class, 'uploadCsv'])->name('mis_sync.upload');
 
+Route::post('/mis-sync/api', [MisSyncController::class, 'syncFromApi'])->name('mis_sync.api');
+
 // 🟢 ALTERNATIVE STRATEGY: Using a unique prefix to avoid any wildcard conflict
 Route::get('/unclaimed-records', [AlumniController::class, 'pending'])->name('alumni.pending');
 
@@ -91,6 +93,8 @@ Route::resource('jobs', JobController::class);
 */
 Route::get('/tracer', [TracerController::class, 'index'])->name('tracer.index');
 Route::post('/tracer', [TracerController::class, 'store'])->name('tracer.store');
+Route::get('/tracer/create', [TracerController::class, 'create'])->name('tracer.create');
+
 Route::get('/tracer/answers/{id}', [TracerController::class, 'show'])->name('tracer.answers');
 Route::get('/tracer/export/{id}', [TracerController::class, 'exportAnswers'])->name('tracer.export');
 Route::delete('/tracer/{id}', [TracerController::class, 'destroy'])->name('tracer.destroy');

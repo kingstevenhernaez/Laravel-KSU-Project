@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MisAlumniRecord;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http; // 🟢 Added for API calls
 
 class MisSyncController extends Controller
 {
@@ -21,6 +22,53 @@ class MisSyncController extends Controller
         ];
 
         return view('admin.mis_sync.index', compact('records', 'stats'));
+    }
+
+    // 🟢 NEW: Process the API Pull
+    public function syncFromApi(Request $request)
+    {
+        $request->validate([
+            'id_number' => 'required|string',
+        ]);
+
+        $idNumber = trim($request->id_number);
+
+        try {
+           $response = Http::withoutVerifying()->get("https://api.ksu.edu.ph/api/v2/search-id-number/{$idNumber}");
+
+            if ($response->successful() && isset($response['result'])) {
+                $data = $response['result'];
+                
+                // Split the name format: "Lastname, Firstname Middlename"
+                $nameParts = explode(',', $data['full_name']);
+                $lastName = trim($nameParts[0]);
+                $firstName = isset($nameParts[1]) ? trim($nameParts[1]) : '';
+
+                // Create or update the local staging record
+                MisAlumniRecord::updateOrCreate(
+                    ['student_id' => $data['id_number']], 
+                    [
+                        'first_name'     => $firstName ?: 'Unknown',
+                        'last_name'      => $lastName ?: 'Unknown',
+                        'course'         => $data['course_code'] ?? null,
+                        'year_graduated' => $data['year'] ?? null,
+                        
+                        // 🟢 OPTION B: Temporary Fallback Birthdate
+                        // Change '2000-01-01' to $data['birthdate'] when the API is updated
+                        'birthdate'      => '2000-01-01', 
+                        
+                        'is_claimed'     => false
+                    ]
+                );
+
+                return back()->with('success', "MIS data for {$data['id_number']} synced successfully!");
+            }
+
+            return back()->with('error', 'Student ID not found in the KSU MIS API.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error connecting to KSU API: ' . $e->getMessage());
+        }
     }
 
     // Process the CSV Upload

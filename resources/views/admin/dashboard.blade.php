@@ -1,123 +1,150 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container-fluid py-4" style="background-color: #f4f7f6; min-height: 100vh;">
 
-    {{-- High-Impact Header --}}
-    <div class="d-flex align-items-center justify-content-between mb-5">
-        <div>
-            <h2 class="fw-extrabold text-dark mb-1" style="letter-spacing: -1px;">System Analytics</h2>
-            <p class="text-muted mb-0">Live monitoring of KSU Alumni registrations and verification status.</p>
-        </div>
-        <div class="date-badge bg-white px-4 py-2 rounded-pill shadow-sm border border-light">
-            <i class="far fa-calendar-alt text-success me-2"></i>
-            <span class="fw-bold">{{ now()->format('F d, Y') }}</span>
-        </div>
-    </div>
+{{-- 🟢 BULLETPROOF OVERRIDE: Fetches the live data directly if the route fails --}}
+@php
+    $verifiedCount = $verifiedCount ?? \App\Models\User::where('status', 1)->count();
+    $pendingCount  = $pendingCount ?? \App\Models\User::where('status', 0)->count();
+    $totalUsers    = $totalUsers ?? \App\Models\User::count();
+    $recentUsers   = $recentUsers ?? \App\Models\User::orderBy('created_at', 'desc')->take(5)->get();
 
-    {{-- Premium Statistic Cards --}}
-    <div class="row g-4 mb-5">
-        <div class="col-xl-4 col-md-6">
-            <div class="ksu-stat-card bg-white p-4 rounded-4 shadow-sm border-0 position-relative overflow-hidden" style="transition: 0.3s;">
-                <div class="stat-icon-bg" style="position: absolute; right: -20px; top: -20px; font-size: 8rem; opacity: 0.03; color: #004d00;">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-success-subtle rounded-3 p-3 me-3">
-                        <i class="fas fa-user-graduate fa-2x text-success"></i>
+    $employmentData = $employmentData ?? \App\Models\User::select('employment_status', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+        ->whereNotNull('employment_status')
+        ->where('employment_status', '!=', '')
+        ->groupBy('employment_status')
+        ->pluck('total', 'employment_status')
+        ->toArray();
+
+    $batchData = $batchData ?? \App\Models\User::select('batch', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+        ->whereNotNull('batch')
+        ->where('batch', '!=', '')
+        ->groupBy('batch')
+        ->orderBy('total', 'desc')
+        ->take(5)
+        ->pluck('total', 'batch')
+        ->toArray();
+@endphp
+
+<div class="container-fluid py-4">
+
+    {{-- TOP ROW: Live Core Metrics --}}
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-success border-4">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-user-graduate fa-2x"></i>
                     </div>
                     <div>
-                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Verified Alumni</h6>
-                        <h2 class="fw-bold mb-0">{{ $total_alumni }}</h2>
+                        <p class="text-muted small fw-bold text-uppercase mb-0">Verified Alumni</p>
+                        <h2 class="fw-bold text-dark mb-0">{{ $verifiedCount }}</h2>
                     </div>
-                </div>
-                <div class="mt-3">
-                    <span class="text-success small fw-bold"><i class="fas fa-arrow-up me-1"></i> +12.5%</span>
-                    <span class="text-muted small ms-2">from last month</span>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6">
-            <div class="ksu-stat-card bg-white p-4 rounded-4 shadow-sm border-0 position-relative overflow-hidden">
-                <div class="stat-icon-bg" style="position: absolute; right: -20px; top: -20px; font-size: 8rem; opacity: 0.03; color: #f6c23e;">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-warning-subtle rounded-3 p-3 me-3">
-                        <i class="fas fa-hourglass-half fa-2x text-warning"></i>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-warning border-4">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-hourglass-half fa-2x"></i>
                     </div>
                     <div>
-                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Pending Claims</h6>
-                        <h2 class="fw-bold mb-0">{{ $pending_verify }}</h2>
+                        <p class="text-muted small fw-bold text-uppercase mb-0">Pending Claims</p>
+                        <h2 class="fw-bold text-dark mb-0">{{ $pendingCount }}</h2>
                     </div>
                 </div>
-                <div class="mt-3 text-muted small">Requires registrar validation.</div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6">
-            <div class="ksu-stat-card bg-white p-4 rounded-4 shadow-sm border-0 position-relative overflow-hidden">
-                <div class="stat-icon-bg" style="position: absolute; right: -20px; top: -20px; font-size: 8rem; opacity: 0.03; color: #2e59d9;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-primary-subtle rounded-3 p-3 me-3">
-                        <i class="fas fa-users fa-2x text-primary"></i>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-primary border-4">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
+                        <i class="fas fa-users fa-2x"></i>
                     </div>
                     <div>
-                        <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Active Users</h6>
-                        <h2 class="fw-bold mb-0">{{ $total_users }}</h2>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: 75%"></div>
+                        <p class="text-muted small fw-bold text-uppercase mb-0">Total Registered</p>
+                        <h2 class="fw-bold text-dark mb-0">{{ $totalUsers }}</h2>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Modern Table Section --}}
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-white py-4 px-4 d-flex justify-content-between align-items-center border-bottom-0">
-            <h5 class="fw-bold text-dark mb-0"><i class="fas fa-history text-success me-2"></i> Recent Activity Log</h5>
-            <a href="{{ route('admin.alumni.index') }}" class="btn btn-light btn-sm fw-bold px-3">View Master List</a>
+    {{-- MIDDLE ROW: Advanced Analytics Charts --}}
+    <div class="row mb-4">
+        {{-- Chart 1: Employment Status --}}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i> Employment Distribution</h6>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center p-4" style="position: relative; height: 300px;">
+                    @if(empty($employmentData))
+                        <p class="text-muted small text-center">No career data available yet.<br>Alumni need to update their profiles.</p>
+                    @else
+                        <canvas id="employmentChart"></canvas>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- Chart 2: Top Batches --}}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-bar me-2 text-success"></i> Registered Alumni by Batch</h6>
+                </div>
+                <div class="card-body p-4" style="position: relative; height: 300px;">
+                    @if(empty($batchData))
+                        <p class="text-muted small text-center mt-5">No batch data available yet.</p>
+                    @else
+                        <canvas id="batchChart"></canvas>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- BOTTOM ROW: Recent Activity Log --}}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-warning"></i> Recent Registrations</h6>
+            <a href="{{ route('admin.masterlist') }}" class="btn btn-sm btn-outline-secondary rounded-pill">View All</a>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">
+                    <thead class="table-light text-muted small text-uppercase">
                         <tr>
-                            <th class="px-4 py-3">User Profile</th>
-                            <th class="py-3">Email Address</th>
-                            <th class="py-3 text-center">Date Joined</th>
-                            <th class="py-3 text-center">Status</th>
+                            <th class="ps-4">Alumni Profile</th>
+                            <th>Email Address</th>
+                            <th>Batch</th>
+                            <th>Date Joined</th>
+                            <th class="pe-4 text-end">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="border-top-0">
-                        @foreach($alumni as $alum)
+                    <tbody>
+                        @foreach($recentUsers as $user)
                         <tr>
-                            <td class="px-4 py-3">
+                            <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-circle me-3 bg-success-subtle text-success fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        {{ strtoupper(substr($alum->first_name ?? 'A', 0, 1)) }}
+                                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex justify-content-center align-items-center me-3 fw-bold" style="width: 40px; height: 40px;">
+                                        {{ substr($user->first_name, 0, 1) }}
                                     </div>
-                                    <span class="fw-bold text-dark">{{ $alum->first_name ?? 'N/A' }} {{ $alum->last_name ?? '' }}</span>
+                                    <span class="fw-bold text-dark">{{ $user->first_name }} {{ $user->last_name }}</span>
                                 </div>
                             </td>
-                            <td class="text-muted">{{ $alum->email }}</td>
-                            <td class="text-center fw-medium">{{ \Carbon\Carbon::parse($alum->created_at)->format('M d, Y') }}</td>
-                            <td class="text-center">
-                                @if($alum->email_verified_at)
-                                    <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2 fw-bold" style="font-size: 0.7rem;">
-                                        <i class="fas fa-check-circle me-1"></i> VERIFIED
-                                    </span>
+                            <td class="text-muted">{{ $user->email }}</td>
+                            <td class="text-muted">{{ $user->batch ?? 'N/A' }}</td>
+                            <td class="text-muted">{{ $user->created_at->format('M d, Y') }}</td>
+                            <td class="pe-4 text-end">
+                                @if($user->status == 1)
+                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill border border-success border-opacity-25"><i class="fas fa-check-circle me-1"></i> Verified</span>
                                 @else
-                                    <span class="badge rounded-pill bg-warning-subtle text-warning px-3 py-2 fw-bold" style="font-size: 0.7rem;">
-                                        <i class="fas fa-clock me-1"></i> PENDING
-                                    </span>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill border border-warning border-opacity-25"><i class="fas fa-clock me-1"></i> Pending</span>
                                 @endif
                             </td>
                         </tr>
@@ -127,17 +154,65 @@
             </div>
         </div>
     </div>
+
 </div>
 
-<style>
-    /* Dashboard Specific Styles */
-    .ksu-stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important;
-    }
-    .bg-success-subtle { background-color: #e8f5e9 !important; }
-    .bg-warning-subtle { background-color: #fff8e1 !important; }
-    .bg-primary-subtle { background-color: #e3f2fd !important; }
-    .fw-extrabold { font-weight: 800; }
-</style>
+{{-- INCLUDE CHART.JS CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // --- 1. Employment Doughnut Chart ---
+        @if(!empty($employmentData))
+            const empCtx = document.getElementById('employmentChart').getContext('2d');
+            new Chart(empCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {!! json_encode(array_keys($employmentData)) !!},
+                    datasets: [{
+                        data: {!! json_encode(array_values($employmentData)) !!},
+                        backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#6c757d', '#dc3545', '#0dcaf0'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        @endif
+
+        // --- 2. Batch Bar Chart ---
+        @if(!empty($batchData))
+            const batchCtx = document.getElementById('batchChart').getContext('2d');
+            new Chart(batchCtx, {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode(array_keys($batchData)) !!},
+                    datasets: [{
+                        label: 'Registered Alumni',
+                        data: {!! json_encode(array_values($batchData)) !!},
+                        backgroundColor: '#198754', // KSU Green
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        @endif
+    });
+</script>
 @endsection
