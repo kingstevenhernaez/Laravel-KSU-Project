@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MisAlumniRecord;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http; // 🟢 Added for API calls
+use Illuminate\Support\Facades\Http;
 
 class MisSyncController extends Controller
 {
@@ -24,7 +24,7 @@ class MisSyncController extends Controller
         return view('admin.mis_sync.index', compact('records', 'stats'));
     }
 
-    // 🟢 NEW: Process the API Pull
+    // Process the API Pull with Bulletproof Safety Checks
     public function syncFromApi(Request $request)
     {
         $request->validate([
@@ -39,32 +39,43 @@ class MisSyncController extends Controller
             if ($response->successful() && isset($response['result'])) {
                 $data = $response['result'];
                 
-                // Split the name format: "Lastname, Firstname Middlename"
-                $nameParts = explode(',', $data['full_name']);
-                $lastName = trim($nameParts[0]);
-                $firstName = isset($nameParts[1]) ? trim($nameParts[1]) : '';
+                // SAFETY FIX: If the API returns a string (like "No record found"), catch it and stop.
+                if (is_string($data)) {
+                    return back()->with('error', 'MIS API Response: ' . $data);
+                }
 
-                // Create or update the local staging record
-                MisAlumniRecord::updateOrCreate(
-                    ['student_id' => $data['id_number']], 
-                    [
-                        'first_name'     => $firstName ?: 'Unknown',
-                        'last_name'      => $lastName ?: 'Unknown',
-                        'course'         => $data['course_code'] ?? null,
-                        'year_graduated' => $data['year'] ?? null,
-                        
-                        // 🟢 OPTION B: Temporary Fallback Birthdate
-                        // Change '2000-01-01' to $data['birthdate'] when the API is updated
-                        'birthdate'      => '2000-01-01', 
-                        
-                        'is_claimed'     => false
-                    ]
-                );
+                // SAFETY FIX: Ensure it is actually an array and has the full_name field before proceeding
+                if (is_array($data) && isset($data['full_name'])) {
+                    
+                    // Split the name format: "Lastname, Firstname Middlename"
+                    $nameParts = explode(',', $data['full_name']);
+                    $lastName = trim($nameParts[0] ?? '');
+                    $firstName = isset($nameParts[1]) ? trim($nameParts[1]) : '';
 
-                return back()->with('success', "MIS data for {$data['id_number']} synced successfully!");
+                    // Create or update the local staging record
+                    MisAlumniRecord::updateOrCreate(
+                        ['student_id' => $data['id_number'] ?? $idNumber], 
+                        [
+                            'first_name'     => $firstName ?: 'Unknown',
+                            'last_name'      => $lastName ?: 'Unknown',
+                            'course'         => $data['course_code'] ?? null,
+                            'year_graduated' => $data['year'] ?? null,
+                            
+                            // Fallback Birthdate
+                            'birthdate'      => '2000-01-01', 
+                            
+                            'is_claimed'     => false
+                        ]
+                    );
+
+                    $syncedId = $data['id_number'] ?? $idNumber;
+                    return back()->with('success', "MIS data for {$syncedId} synced successfully!");
+                } else {
+                    return back()->with('error', 'The MIS API returned data in an unrecognized format.');
+                }
             }
 
-            return back()->with('error', 'Student ID not found in the KSU MIS API.');
+            return back()->with('error', 'Failed to retrieve data from the KSU MIS API.');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Error connecting to KSU API: ' . $e->getMessage());
@@ -88,9 +99,9 @@ class MisSyncController extends Controller
         $handle = fopen($file->path(), 'r');
         $headers = fgetcsv($handle); // Read the first row (headers)
 
-        // Ensure headers are clean (lowercase, no spaces)
+        // Ensure headers are clean
         $headers = array_map(function($header) {
-            return strtolower(trim(str_replace("\xEF\xBB\xBF", '', $header))); // removes BOM character if present
+            return strtolower(trim(str_replace("\xEF\xBB\xBF", '', $header))); 
         }, $headers);
 
         $count = 0;
@@ -99,15 +110,12 @@ class MisSyncController extends Controller
         DB::beginTransaction();
         try {
             while (($row = fgetcsv($handle)) !== false) {
-                // Skip empty rows
                 if(empty(array_filter($row))) continue;
 
                 $data = array_combine($headers, $row);
 
-                // Basic validation: Must have a Student ID
                 if (empty($data['student_id'])) continue;
 
-                // updateOrCreate ensures we don't duplicate records if we upload the same file twice
                 MisAlumniRecord::updateOrCreate(
                     ['student_id' => $data['student_id']], 
                     [
