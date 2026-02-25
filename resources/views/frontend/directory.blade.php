@@ -119,17 +119,16 @@
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <div>
-                                        {{-- 🟢 Removed Email display for privacy --}}
+                                        {{-- 🟢 Hidden Email logic kept intact for privacy --}}
                                         <div class="fw-bold text-dark">{{ $alum->first_name }} {{ $alum->last_name }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                {{-- 🟢 Dynamically pulls course from MIS record or User table --}}
+                                {{-- 🟢 Fallback chain logic kept intact --}}
                                 {{ $alum->misRecord->course ?? ($alum->department->name ?? ($alum->course ?? 'Course Not Set')) }}
                             </td>
                             <td class="text-center">
-                                {{-- 🟢 Dynamically pulls graduation year from MIS record or User table --}}
                                 @php 
                                     $gradYear = $alum->misRecord->year_graduated ?? ($alum->batch ?? ($alum->year_graduated ?? null)); 
                                 @endphp
@@ -161,7 +160,7 @@
                 <i class="fas fa-search fa-3x text-muted opacity-25 mb-3"></i>
                 <h4 class="fw-bold text-secondary">No matches found.</h4>
                 <p class="text-muted">We couldn't find "<strong>{{ request('search') }}</strong>".</p>
-                <a href="{{ route('public.directory') }}" class="btn btn-sm btn-outline-success mt-2">View Full List</a>
+                {{-- 🟢 THE "VIEW FULL LIST" BUTTON HAS BEEN REMOVED FROM HERE --}}
             </div>
         @endif
     </div>

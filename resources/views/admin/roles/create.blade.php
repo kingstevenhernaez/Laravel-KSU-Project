@@ -86,6 +86,14 @@
                                             <input class="form-check-input" type="checkbox" name="role_name[]" value="tracer_analytics" id="p_tracer">
                                             <label class="form-check-label" for="p_tracer">Tracer Analytics</label>
                                         </div>
+
+                                        <div class="form-check mb-2">
+    <input class="form-check-input shadow-none" type="checkbox" name="role_name[]" value="generate_reports" id="role_reports">
+    <label class="form-check-label text-secondary" for="role_reports">
+        Reports & Printing
+    </label>
+</div>
+
                                     </div>
                                 </div>
                             </div>

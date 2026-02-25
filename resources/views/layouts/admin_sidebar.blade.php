@@ -16,8 +16,11 @@
     $canNews    = $isSuperAdmin || in_array('manage_news', $userRoles);
     $canJobs    = $isSuperAdmin || in_array('manage_jobs', $userRoles);
     $canTracer  = $isSuperAdmin || in_array('tracer_analytics', $userRoles);
-    $showCampusSection = $canEvents || $canNews || $canJobs || $canTracer;
+
+    $canReports = $isSuperAdmin || in_array('generate_reports', $userRoles);
     
+    $showCampusSection = $canEvents || $canNews || $canJobs || $canTracer || $canReports;
+
     // Communication Permissions
     $canEmail   = $isSuperAdmin || in_array('email_blast', $userRoles);
     $canHistory = $isSuperAdmin || in_array('email_history', $userRoles);
@@ -131,11 +134,13 @@
         </li>
         @endif
 
+        @if($canReports)
         <li class="nav-item mb-2">
             <a href="{{ route('admin.reports.index') }}" class="nav-link text-white {{ Request::is('admin/reports*') ? 'active' : '' }}">
                 <i class="fas fa-print me-3"></i> Reports & Printing
             </a>
         </li>
+        @endif
 
       @if($showCommSection)
         <hr class="border-light opacity-10 my-4">

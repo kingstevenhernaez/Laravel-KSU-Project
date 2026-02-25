@@ -88,9 +88,13 @@
                                             <input class="form-check-input" type="checkbox" name="role_name[]" value="manage_jobs" id="p_jobs" {{ in_array('manage_jobs', $currentRoles) ? 'checked' : '' }}>
                                             <label class="form-check-label" for="p_jobs">Job Postings</label>
                                         </div>
-                                        <div class="form-check">
+                                        <div class="form-check mb-2">
                                             <input class="form-check-input" type="checkbox" name="role_name[]" value="tracer_analytics" id="p_tracer" {{ in_array('tracer_analytics', $currentRoles) ? 'checked' : '' }}>
                                             <label class="form-check-label" for="p_tracer">Tracer Analytics</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="role_name[]" value="generate_reports" id="p_reports" {{ in_array('generate_reports', $currentRoles) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="p_reports">Reports & Printing</label>
                                         </div>
                                     </div>
                                 </div>
