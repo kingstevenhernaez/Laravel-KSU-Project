@@ -21,40 +21,38 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Validate editable fields (Increased max image size to 10MB so phones don't get blocked)
+        // 1. Strict Validation (Reduced image size to 2MB maximum to protect server storage)
         $request->validate([
             'email'             => 'required|email|unique:users,email,' . $user->id,
             'mobile'            => 'nullable|string|max:20',
-            'image'             => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+            'image'             => 'nullable|image|mimes:jpg,jpeg,png|max:2048', 
             'employment_status' => 'nullable|string',
             'job_title'         => 'nullable|string|max:255',
             'company'           => 'nullable|string|max:255',
         ]);
 
-        // 2. Handle Image Upload with Compression & Resizing
+        // 2. Handle Image Upload & Garbage Collection
         if ($request->hasFile('image')) {
             try {
-                // A. Delete old image if it exists
+                // 🟢 AUTO-DELETE: Physically destroy the old image from the Ubuntu server
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
 
                 $file = $request->file('image');
                 
-                // B. Create a unique filename (.jpg format)
+                // Create a unique filename
                 $filename = 'profile_' . $user->id . '_' . time() . '.jpg';
                 $storagePath = 'profiles/' . $filename;
 
-                // C. Use Intervention Image V2 to process the file
+                // Process, crop, and compress
                 $img = Image::make($file->getRealPath());
-                
-                // D. Crop to a perfect 500x500 square and encode to JPG at 80% quality
                 $img->fit(500, 500)->encode('jpg', 80);
 
-                // E. Save the compressed image to Laravel's public storage
+                // Save to public storage
                 Storage::disk('public')->put($storagePath, (string) $img);
                 
-                // F. Save the relative path to the database
+                // Update database path
                 $user->image = $storagePath;
 
             } catch (\Exception $e) {
@@ -71,7 +69,21 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return back()->with('success', 'Profile and Career Info updated successfully!');
+        return back()->with('success', 'Profile updated successfully!');
+    }
+
+    // 🟢 NEW: Dedicated function to manually delete profile pictures
+    public function removePhoto()
+    {
+        $user = Auth::user();
+
+        if ($user->image && Storage::disk('public')->exists($user->image)) {
+            Storage::disk('public')->delete($user->image);
+            $user->image = null;
+            $user->save();
+        }
+
+        return back()->with('success', 'Profile picture permanently removed.');
     }
 
     public function changePassword(Request $request)

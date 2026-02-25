@@ -149,6 +149,7 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
 
     Route::get('/tracer/{id}', [\App\Http\Controllers\Alumni\TracerController::class, 'show'])->name('tracer.show');
     Route::post('/tracer/{id}', [\App\Http\Controllers\Alumni\TracerController::class, 'store'])->name('tracer.store');
+    Route::delete('/profile/photo', [\App\Http\Controllers\Alumni\ProfileController::class, 'removePhoto'])->name('profile.remove_photo');
 });
 
 Route::middleware(['auth'])

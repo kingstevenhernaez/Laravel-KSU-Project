@@ -18,7 +18,7 @@
     $canTracer  = $isSuperAdmin || in_array('tracer_analytics', $userRoles);
 
     $canReports = $isSuperAdmin || in_array('generate_reports', $userRoles);
-    
+
     $showCampusSection = $canEvents || $canNews || $canJobs || $canTracer || $canReports;
 
     // Communication Permissions
@@ -129,7 +129,7 @@
         <li class="nav-item mb-2">
             {{-- 🟢 ADDED ICON: fa-chart-line --}}
             <a href="{{ route('admin.tracer.index') }}" class="nav-link text-white {{ Request::is('admin/tracer*') ? 'active' : '' }}">
-                <i class="fas fa-chart-line me-3"></i> Tracer Analytics
+                <i class="fas fa-chart-line me-3"></i> Tracer
             </a>
         </li>
         @endif
@@ -159,7 +159,7 @@
         <li class="nav-item mb-2">
             {{-- 🟢 Fixed Route Name --}}
             <a href="{{ route('admin.emails.index') }}" class="nav-link text-white {{ Request::is('admin/email-center') ? 'active' : '' }}">
-                <i class="fas fa-envelope-open-text me-3"></i> History Log
+                <i class="fas fa-envelope-open-text me-3"></i> Sent Email
             </a>
         </li>
         @endif

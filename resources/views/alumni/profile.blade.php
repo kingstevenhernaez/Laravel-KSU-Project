@@ -19,10 +19,20 @@
                     @endif
                 </div>
 
+                {{-- 🟢 NEW: Manual "Remove Photo" Button --}}
+                @if($user->image)
+                    <form action="{{ route('alumni.profile.remove_photo') }}" method="POST" class="mb-3">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm" onclick="return confirm('Permanently delete your profile picture?')">
+                            <i class="fas fa-trash-alt me-1"></i> Remove Photo
+                        </button>
+                    </form>
+                @endif
+
                 <h5 class="fw-bold">{{ $user->first_name }} {{ $user->last_name }}</h5>
                 <p class="text-muted small mb-1">{{ $user->email }}</p>
                 
-                {{-- 🟢 FIXED: Display actual Course and Year Graduated from DB --}}
                 <p class="text-success small fw-bold mb-2">{{ $user->course ?? 'Course Not Specified' }}</p>
                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
                     Class of {{ $user->year_graduated ?? 'N/A' }}
@@ -75,8 +85,8 @@
 
                             <div class="col-12 mb-2 mt-3">
                                 <label class="form-label small text-muted fw-bold">Upload New Profile Picture</label>
-                                <input type="file" name="image" class="form-control">
-                                <small class="text-muted">Recommended: Square JPG/PNG, max 2MB.</small>
+                                <input type="file" name="image" class="form-control" accept="image/jpeg, image/png, image/jpg">
+                                <small class="text-muted d-block mt-1">Recommended: Square JPG/PNG, Max 2MB.</small>
                             </div>
 
                             <div class="col-md-6">
@@ -98,7 +108,7 @@
                                 <input type="text" name="mobile" class="form-control border-primary border-opacity-50" value="{{ $user->mobile }}">
                             </div>
 
-                            {{-- 🟢 NEW: Sensitive Career Section --}}
+                            {{-- Career Section --}}
                             <div class="col-12 mt-4">
                                 <hr>
                                 <h6 class="fw-bold mb-3"><i class="fas fa-briefcase me-2 text-primary"></i> Career Information</h6>
@@ -115,7 +125,6 @@
                                 </select>
                             </div>
 
-                            {{-- Gentle supportive note for those seeking jobs --}}
                             <div class="col-12" id="exploringNote" style="display: none;">
                                 <div class="alert alert-success bg-success bg-opacity-10 border-success border-opacity-25 py-2 small mb-0">
                                     <i class="fas fa-lightbulb text-success me-1"></i> <strong>Keep going!</strong> Don't forget to check our <a href="{{ route('alumni.jobs.index') }}" class="fw-bold text-success text-decoration-underline">Career Ops board</a> for exclusive job openings.
@@ -191,7 +200,6 @@
         }
     }
     
-    // Run on page load to set correct visibility
     window.onload = function() {
         toggleJobFields();
     };
