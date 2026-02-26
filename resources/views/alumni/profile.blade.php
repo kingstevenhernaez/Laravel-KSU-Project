@@ -19,7 +19,7 @@
                     @endif
                 </div>
 
-                {{-- 🟢 NEW: Manual "Remove Photo" Button --}}
+                {{-- Manual "Remove Photo" Button --}}
                 @if($user->image)
                     <form action="{{ route('alumni.profile.remove_photo') }}" method="POST" class="mb-3">
                         @csrf
@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        {{-- RIGHT COLUMN: Forms --}}
+        {{-- RIGHT COLUMN: Forms & Timeline --}}
         <div class="col-md-8">
             
             @if(session('success'))
@@ -65,10 +65,10 @@
                 </div>
             @endif
 
-            {{-- UPDATE INFO FORM --}}
+            {{-- 1. UPDATE BASIC INFO FORM --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2 text-primary"></i> Update Profile Information</h6>
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2 text-primary"></i> Basic Profile Information</h6>
                 </div>
                 <div class="card-body p-4">
                     <form action="{{ route('alumni.profile.update') }}" method="POST" enctype="multipart/form-data">
@@ -107,39 +107,6 @@
                                 <label class="form-label fw-bold">Mobile Number</label>
                                 <input type="text" name="mobile" class="form-control border-primary border-opacity-50" value="{{ $user->mobile }}">
                             </div>
-
-                            {{-- Career Section --}}
-                            <div class="col-12 mt-4">
-                                <hr>
-                                <h6 class="fw-bold mb-3"><i class="fas fa-briefcase me-2 text-primary"></i> Career Information</h6>
-                            </div>
-                            
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Current Status</label>
-                                <select name="employment_status" id="employmentStatus" class="form-select border-primary border-opacity-50" onchange="toggleJobFields()">
-                                    <option value="">-- Select Status --</option>
-                                    <option value="Employed" {{ $user->employment_status == 'Employed' ? 'selected' : '' }}>Employed / Working</option>
-                                    <option value="Self-Employed" {{ $user->employment_status == 'Self-Employed' ? 'selected' : '' }}>Self-Employed / Freelance</option>
-                                    <option value="Continuing Education" {{ $user->employment_status == 'Continuing Education' ? 'selected' : '' }}>Continuing Education / Studying</option>
-                                    <option value="Exploring Opportunities" {{ $user->employment_status == 'Exploring Opportunities' ? 'selected' : '' }}>Currently Exploring Opportunities</option>
-                                </select>
-                            </div>
-
-                            <div class="col-12" id="exploringNote" style="display: none;">
-                                <div class="alert alert-success bg-success bg-opacity-10 border-success border-opacity-25 py-2 small mb-0">
-                                    <i class="fas fa-lightbulb text-success me-1"></i> <strong>Keep going!</strong> Don't forget to check our <a href="{{ route('alumni.jobs.index') }}" class="fw-bold text-success text-decoration-underline">Career Ops board</a> for exclusive job openings.
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 job-details-field">
-                                <label class="form-label fw-bold">Job Title / Role</label>
-                                <input type="text" name="job_title" id="jobTitle" class="form-control" value="{{ $user->job_title }}" placeholder="e.g. Software Engineer">
-                            </div>
-                            <div class="col-md-6 job-details-field">
-                                <label class="form-label fw-bold">Company / Organization</label>
-                                <input type="text" name="company" id="companyName" class="form-control" value="{{ $user->company }}" placeholder="e.g. Tech Corp Inc.">
-                            </div>
-                            
                         </div>
 
                         <div class="mt-4 text-end">
@@ -149,7 +116,53 @@
                 </div>
             </div>
 
-            {{-- CHANGE PASSWORD FORM --}}
+            {{-- 2. NEW CAREER TIMELINE CARD (Separated safely from the profile form) --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-briefcase me-2 text-primary"></i> Career Timeline</h6>
+                    <button type="button" class="btn btn-sm btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addJobModal">
+                        <i class="fas fa-plus me-1"></i> Add Experience
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <div class="timeline-container border-start border-2 border-primary ms-2 ps-4 position-relative">
+                        @forelse($user->employmentHistories as $job)
+                            <div class="mb-4 position-relative">
+                                <span class="position-absolute bg-primary rounded-circle border border-white border-3" style="width: 16px; height: 16px; left: -33px; top: 4px;"></span>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold text-dark mb-0">{{ $job->job_title }}</h6>
+                                    
+                                    {{-- Delete Form (Now safely isolated) --}}
+                                    <form action="{{ route('alumni.profile.employment.destroy', $job->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-link text-danger p-0 ms-3" onclick="return confirm('Remove this experience?')" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <p class="text-primary fw-bold mb-1 small">{{ $job->company_name }} <span class="text-muted fw-normal ms-2 border-start ps-2">{{ $job->employment_type }}</span></p>
+                                
+                                <p class="text-muted small">
+                                    <i class="far fa-calendar-alt me-1"></i> 
+                                    {{ $job->start_date->format('M Y') }} – 
+                                    @if($job->is_current)
+                                        <span class="text-success fw-bold">Present</span>
+                                    @else
+                                        {{ $job->end_date->format('M Y') }}
+                                    @endif
+                                </p>
+                            </div>
+                        @empty
+                            <div class="text-muted small py-3 fst-italic">No career history added yet. Build your timeline to improve your Tracer Study profile!</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            {{-- 3. CHANGE PASSWORD FORM --}}
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-lock me-2 text-warning"></i> Change Password</h6>
@@ -182,26 +195,78 @@
     </div>
 </div>
 
+{{-- ADD EXPERIENCE MODAL --}}
+<div class="modal fade" id="addJobModal" tabindex="-1" aria-labelledby="addJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="addJobModalLabel"><i class="fas fa-briefcase me-2"></i> Add Career Experience</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('alumni.profile.employment.store') }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Job Title / Position</label>
+                            <input type="text" name="job_title" class="form-control" placeholder="e.g. Software Engineer" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Company / Organization Name</label>
+                            <input type="text" name="company_name" class="form-control" placeholder="e.g. Tech Corp Inc." required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Employment Type</label>
+                            <select name="employment_type" class="form-select" required>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Internship">Internship</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-6" id="endDateContainer">
+                            <label class="form-label fw-bold small">End Date</label>
+                            <input type="date" name="end_date" class="form-control" id="endDateInput">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_current" value="1" id="isCurrentJob" onchange="toggleEndDate()">
+                                <label class="form-check-label fw-bold small text-primary" for="isCurrentJob">
+                                    I am currently working in this role
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Save & Sync to MIS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-    function toggleJobFields() {
-        const status = document.getElementById('employmentStatus').value;
-        const jobFields = document.querySelectorAll('.job-details-field');
-        const exploringNote = document.getElementById('exploringNote');
+    // Clean, isolated script just for the modal
+    function toggleEndDate() {
+        const isCurrent = document.getElementById('isCurrentJob').checked;
+        const endDateContainer = document.getElementById('endDateContainer');
+        const endDateInput = document.getElementById('endDateInput');
         
-        if (status === 'Employed' || status === 'Self-Employed') {
-            jobFields.forEach(el => el.style.display = 'block');
-            exploringNote.style.display = 'none';
-        } else if (status === 'Exploring Opportunities') {
-            jobFields.forEach(el => el.style.display = 'none');
-            exploringNote.style.display = 'block';
+        if (isCurrent) {
+            endDateContainer.style.opacity = '0.5';
+            endDateInput.disabled = true;
+            endDateInput.value = '';
         } else {
-            jobFields.forEach(el => el.style.display = 'none');
-            exploringNote.style.display = 'none';
+            endDateContainer.style.opacity = '1';
+            endDateInput.disabled = false;
         }
     }
-    
-    window.onload = function() {
-        toggleJobFields();
-    };
 </script>
 @endsection

@@ -104,4 +104,59 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Password changed successfully!');
     }
+
+    // 🟢 PHASE 1 & 2: Store Job History and Push Webhook to MIS
+    public function storeEmployment(Request $request)
+    {
+        $request->validate([
+            'company_name'    => 'required|string|max:255',
+            'job_title'       => 'required|string|max:255',
+            'employment_type' => 'required|string|max:100',
+            'start_date'      => 'required|date',
+            'end_date'        => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $user = Auth::user();
+        $isCurrent = $request->has('is_current');
+
+        $employment = $user->employmentHistories()->create([
+            'company_name'    => $request->company_name,
+            'job_title'       => $request->job_title,
+            'employment_type' => $request->employment_type,
+            'start_date'      => $request->start_date,
+            'end_date'        => $isCurrent ? null : $request->end_date,
+            'is_current'      => $isCurrent,
+        ]);
+
+        // 🟢 PHASE 2: AUTOMATED WEBHOOK (REAL-TIME PUSH TO MIS)
+        try {
+            // The destination URL on the ICT/MIS server
+            $webhookUrl = env('MIS_WEBHOOK_URL', 'https://mis.ksu.edu.ph/api/sync/alumni-jobs');
+            
+            \Illuminate\Support\Facades\Http::timeout(5)->post($webhookUrl, [
+                'student_id'   => $user->student_id ?? 'N/A',
+                'email'        => $user->email,
+                'first_name'   => $user->first_name,
+                'last_name'    => $user->last_name,
+                'new_job'      => $employment->toArray(),
+                'full_history' => $user->employmentHistories()->get()->toArray() // Sends their entire timeline
+            ]);
+        } catch (\Exception $e) {
+            // We use Log::error so if the MIS server is down, the Alumni system doesn't crash
+            \Illuminate\Support\Facades\Log::error('MIS Webhook Sync Failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Career experience added and synchronized successfully!');
+    }
+
+    public function destroyEmployment($id)
+    {
+        $employment = \App\Models\EmploymentHistory::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+            
+        $employment->delete();
+
+        return back()->with('success', 'Experience removed from your timeline.');
+    }
 }

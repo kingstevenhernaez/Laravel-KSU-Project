@@ -26029,3 +26029,5 @@ Did you mean one of these?
 #55 C:/laragon/www/ksu_alumni_management/server.php(21): require_once('C://laragon//www//...')
 #56 {main}
 "} 
+[2026-02-26 11:08:29] local.ERROR: MIS Webhook Sync Failed: cURL error 77: error setting certificate file: D:\Projects\Laragon-installer\8.0-W64\etc\ssl\cacert.pem (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://mis.ksu.edu.ph/api/sync/alumni-jobs  
+[2026-02-26 11:09:15] local.ERROR: MIS Webhook Sync Failed: cURL error 77: error setting certificate file: D:\Projects\Laragon-installer\8.0-W64\etc\ssl\cacert.pem (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://mis.ksu.edu.ph/api/sync/alumni-jobs  

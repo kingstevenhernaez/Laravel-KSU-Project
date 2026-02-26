@@ -67,4 +67,12 @@ class User extends Authenticatable
         // Links the 'student_id' in the users table to the 'student_id' in mis_alumni_records
         return $this->hasOne(\App\Models\MisAlumniRecord::class, 'student_id', 'student_id');
     }
+
+    /**
+     * Career Timeline Relationship
+     */
+    public function employmentHistories()
+    {
+        return $this->hasMany(EmploymentHistory::class)->orderBy('start_date', 'desc');
+    }
 }

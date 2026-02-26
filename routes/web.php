@@ -150,7 +150,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 // 🟢 MASTERLIST & UNCLAIMED RECORDS (Pointed to Controller)
     Route::get('/alumni', [AlumniController::class, 'index'])->name('alumni.index');
     Route::get('/unclaimed-records', [AlumniController::class, 'pending'])->name('claims.index');
-    
+
     // Status & Show Alumni
     Route::post('alumni/status/{id}', function ($id) {
         $user = User::findOrFail($id);
@@ -196,6 +196,10 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
 
     Route::get('/tracer/{id}', [AlumniTracerController::class, 'show'])->name('tracer.show');
     Route::post('/tracer/{id}', [AlumniTracerController::class, 'store'])->name('tracer.store');
+
+    // Career Timeline Routes
+    Route::post('/profile/employment', [AlumniProfileController::class, 'storeEmployment'])->name('profile.employment.store');
+    Route::delete('/profile/employment/{id}', [AlumniProfileController::class, 'destroyEmployment'])->name('profile.employment.destroy');
 });
 
 Route::middleware(['auth'])->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])->name('jobs.apply');
