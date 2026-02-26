@@ -32,24 +32,17 @@ Route::match(['GET', 'POST'], 'nomination-application-verify', [NominationContro
 */
 Route::get('/v1/job-history/{student_id}', function (Request $request, $student_id) {
     
-    // 1. SECURITY: Ensure only authorized servers can access this data
-    $secretKey = 'KSU-ALUMNI-SECURE-2026'; // You will give this key to ICT
-    
-    if ($request->header('X-API-KEY') !== $secretKey) {
-        return response()->json(['error' => 'Unauthorized Access. Invalid API Key.'], 401);
-    }
-
-    // 2. Fetch the Alumni and their Career Timeline
-    $alumni = User::with(['employmentHistories' => function($query) {
+    // 1. Fetch the Alumni and their Career Timeline
+    $alumni = App\Models\User::with(['employmentHistories' => function($query) {
         $query->orderBy('start_date', 'desc'); // Orders by newest jobs first
     }])->where('student_id', $student_id)->first();
 
-    // 3. Return 404 if student ID isn't found
+    // 2. Return 404 if student ID isn't found
     if (!$alumni) {
         return response()->json(['error' => 'No alumni record found for this Student ID.'], 404);
     }
 
-    // 4. Return the data formatted strictly for database mapping
+    // 3. Return the data formatted strictly for database mapping
     return response()->json([
         'student_id' => $alumni->student_id,
         'full_name'  => $alumni->first_name . ' ' . $alumni->last_name,
