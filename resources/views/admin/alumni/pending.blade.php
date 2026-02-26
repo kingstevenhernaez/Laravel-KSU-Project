@@ -1,4 +1,6 @@
-@extends('layouts.admin') @section('content')
+@extends('layouts.admin') 
+
+@section('content')
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
@@ -10,12 +12,24 @@
     </div>
 
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-muted">Unclaimed MIS Records</h5>
-            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">
-                {{ $pendingRecords->total() }} Pending
-            </span>
+        {{-- 🟢 SEARCH BAR & HEADER --}}
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0 fw-bold text-muted me-3">Unclaimed MIS Records</h5>
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">
+                    {{ $pendingRecords->total() }} Pending
+                </span>
+            </div>
+            
+            <form action="{{ url()->current() }}" method="GET" class="d-flex" style="width: 350px;">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control bg-light border-secondary border-opacity-25 shadow-none" 
+                           placeholder="Search Name, ID, or Course..." value="{{ request('search') }}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
         </div>
+
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -44,9 +58,17 @@
                         @empty
                         <tr>
                             <td colspan="6" class="text-center py-5">
-                                <div class="text-muted mb-2"><i class="fas fa-check-circle fa-3x text-success opacity-50"></i></div>
-                                <h5 class="fw-bold text-dark">All Caught Up!</h5>
-                                <p class="mb-0">There are no pending alumni. Everyone has claimed their account!</p>
+                                {{-- 🟢 DYNAMIC EMPTY STATE (Checks if it's a failed search vs an empty database) --}}
+                                @if(request('search'))
+                                    <i class="fas fa-search fa-3x text-muted mb-3 opacity-25"></i>
+                                    <h5 class="fw-bold text-secondary">No records found.</h5>
+                                    <p class="text-muted mb-2">No results matched your search for "<strong>{{ request('search') }}</strong>".</p>
+                                    <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Search</a>
+                                @else
+                                    <div class="text-muted mb-2"><i class="fas fa-check-circle fa-3x text-success opacity-50"></i></div>
+                                    <h5 class="fw-bold text-dark">All Caught Up!</h5>
+                                    <p class="mb-0">There are no pending alumni. Everyone has claimed their account!</p>
+                                @endif
                             </td>
                         </tr>
                         @endforelse
@@ -54,9 +76,11 @@
                 </table>
             </div>
         </div>
+        
+        {{-- 🟢 UPDATED PAGINATION (Appends search query) --}}
         @if($pendingRecords->hasPages())
         <div class="card-footer bg-white border-top py-3">
-            {{ $pendingRecords->links() }}
+            {{ $pendingRecords->appends(request()->query())->links('pagination::bootstrap-5') }}
         </div>
         @endif
     </div>

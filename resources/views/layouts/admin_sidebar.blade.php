@@ -74,13 +74,13 @@
         </li>
         @endif
 
-        @if($canPending)
+  @if($canPending)
         <li class="nav-item mb-2">
-            {{-- 🟢 Perfectly maps to our newly created route --}}
-            <a href="{{ route('admin.claims.index') }}" class="nav-link text-white {{ Request::is('admin/pending-claims*') ? 'active' : '' }}">
+            {{-- 🟢 THE FIX: URL updated to reflect the unclaimed-records route --}}
+            <a href="{{ route('admin.claims.index') }}" class="nav-link text-white {{ Request::is('admin/unclaimed-records*') ? 'active' : '' }}">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div>
-                        <i class="fas fa-user-clock me-3"></i> Pending Claims
+                        <i class="fas fa-user-clock me-3"></i> Unclaimed Records
                     </div>
                     
                     {{-- DYNAMIC BADGE --}}

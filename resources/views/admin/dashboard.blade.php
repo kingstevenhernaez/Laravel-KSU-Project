@@ -112,7 +112,7 @@
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
             <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-warning"></i> Recent Registrations</h6>
-            <a href="{{ route('admin.masterlist') }}" class="btn btn-sm btn-outline-secondary rounded-pill">View All</a>
+           <a href="{{ route('admin.alumni.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill">View All</a>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
