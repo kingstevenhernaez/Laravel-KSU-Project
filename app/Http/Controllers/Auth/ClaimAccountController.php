@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Events\Registered;
 
 class ClaimAccountController extends Controller
 {
@@ -43,19 +44,27 @@ class ClaimAccountController extends Controller
     }
 
     // 3. Finalize Registration (POST Request)
-    public function register(Request $request)
+   public function register(Request $request)
     {
         $request->validate([
             'record_id' => 'required|exists:mis_alumni_records,id',
             'email'     => 'required|email|unique:users,email',
             'mobile'    => 'required|string|unique:users,mobile',
             'password'  => 'required|min:8|confirmed',
+            // 🟢 Single File Validation
+            'valid_id'  => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048', 
         ]);
 
         $record = MisAlumniRecord::findOrFail($request->record_id);
 
         if ($record->is_claimed) {
             return redirect()->route('login')->with('error', 'Account already claimed.');
+        }
+
+        // Handle the single ID Upload
+        $idPath = null;
+        if ($request->hasFile('valid_id')) {
+            $idPath = $request->file('valid_id')->store('alumni_ids', 'public');
         }
 
         // Create the User
@@ -74,6 +83,7 @@ class ClaimAccountController extends Controller
             'role'           => 2, // Alumni
             'is_alumni'      => 1,
             'status'         => 1, // Active
+            'valid_id_path'  => $idPath, // Save ID Path
         ]);
 
         $user->assignRole('alumni');
@@ -83,8 +93,12 @@ class ClaimAccountController extends Controller
             'user_id'    => $user->id
         ]);
 
+        // 🟢 THE FIX: Trigger Laravel's built-in email verification system
+        event(new Registered($user));
+        
         Auth::login($user);
         
-        return redirect()->route('alumni.dashboard')->with('success', 'Account claimed successfully! Welcome back.');
+        // Redirect them to a verification notice page (Laravel handles this natively)
+        return redirect()->route('verification.notice')->with('success', 'Account registered! Please check your email to verify your account.');
     }
 }

@@ -11,14 +11,14 @@ use App\Models\MisAlumniRecord;
 class AlumniController extends Controller
 {
     /**
-     * 🟢 Show Registered Users (Masterlist) WITH SEARCH
+     * 🟢 Show Registered Users (Masterlist) WITH FILTERS
      */
     public function index(Request $request)
     {
         // Query the Users table for verified alumni
         $query = User::where('role', 2)->where('status', 1);
 
-        // Apply Search Filter
+        // Text Search
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -29,21 +29,31 @@ class AlumniController extends Controller
             });
         }
 
+        // 🟢 ICT Requested Dropdown Filters
+        if ($request->filled('course')) {
+            $query->where('course', $request->course);
+        }
+        if ($request->filled('batch')) {
+            $query->where('batch', $request->batch);
+        }
+
         $alumni = $query->orderBy('created_at', 'desc')->paginate(15);
         $pageTitle = "Alumni Master List";
+
+        // Fetch unique courses and batches to populate the frontend dropdowns
+        $courses = User::where('role', 2)->whereNotNull('course')->where('course', '!=', '')->distinct()->orderBy('course')->pluck('course');
+        $batches = User::where('role', 2)->whereNotNull('batch')->where('batch', '!=', '')->distinct()->orderBy('batch', 'desc')->pluck('batch');
         
-        return view('admin.alumni.index', compact('alumni', 'pageTitle'));
+        return view('admin.alumni.index', compact('alumni', 'pageTitle', 'courses', 'batches'));
     }
 
     /**
-     * 🟢 Show Unclaimed Records (MIS Staging) WITH SEARCH
+     * Show Unclaimed Records (MIS Staging) WITH SEARCH
      */
     public function pending(Request $request)
     {
-        // Query the MIS Records table for unclaimed data
         $query = MisAlumniRecord::where('is_claimed', false);
 
-        // Apply Search Filter
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -59,9 +69,6 @@ class AlumniController extends Controller
         return view('admin.alumni.pending', compact('pendingRecords'));
     }
 
-    /**
-     * Show individual profile.
-     */
     public function show($id)
     {
         $user = DB::table('users')->where('id', $id)->first();
@@ -71,9 +78,6 @@ class AlumniController extends Controller
         return view('admin.alumni.show', compact('user'));
     }
     
-    /**
-     * Update account status.
-     */
     public function updateStatus($id)
     {
         $user = DB::table('users')->where('id', $id)->first();
@@ -85,9 +89,6 @@ class AlumniController extends Controller
         return back()->with('error', 'User not found.');
     }
 
-    /**
-     * Delete account.
-     */
     public function destroy($id)
     {
         DB::table('users')->where('id', $id)->delete();

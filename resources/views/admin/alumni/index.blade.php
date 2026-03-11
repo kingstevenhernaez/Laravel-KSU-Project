@@ -4,12 +4,10 @@
 <div class="container-fluid">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        {{-- 🟢 Dynamic Title based on which route you are on --}}
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-user-graduate me-2"></i> {{ $pageTitle ?? 'Alumni Master List' }}
         </h1>
         
-        {{-- 🟢 Dynamic Button: Switch between Masterlist and Unclaimed --}}
         @if(Request::is('admin/alumni'))
             <a href="{{ route('admin.claims.index') }}" class="btn btn-warning shadow-sm fw-bold">
                 <i class="fas fa-user-clock me-1"></i> View Unclaimed Records
@@ -22,19 +20,37 @@
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
             <h6 class="m-0 font-weight-bold text-primary">Registered Alumni</h6>
             
-            {{-- 🟢 SEARCH BAR: Works perfectly for both pages --}}
-            <form action="{{ url()->current() }}" method="GET" class="d-inline-block form-inline mt-2 mt-md-0">
-                <div class="input-group">
+            {{-- 🟢 ICT Requested Masterlist Filters & Search --}}
+            <form action="{{ url()->current() }}" method="GET" class="d-flex flex-wrap gap-2">
+                @if(isset($courses) && isset($batches)) {{-- Only show dropdowns if viewing masterlist --}}
+                    <select name="course" class="form-select form-select-sm" style="width: auto;">
+                        <option value="">All Programs</option>
+                        @foreach($courses as $c)
+                            <option value="{{ $c }}" {{ request('course') == $c ? 'selected' : '' }}>{{ $c }}</option>
+                        @endforeach
+                    </select>
+                    
+                    <select name="batch" class="form-select form-select-sm" style="width: auto;">
+                        <option value="">All Batches</option>
+                        @foreach($batches as $b)
+                            <option value="{{ $b }}" {{ request('batch') == $b ? 'selected' : '' }}>{{ $b }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
+                <div class="input-group input-group-sm" style="width: 250px;">
                     <input type="text" name="search" class="form-control" placeholder="Search Name, ID, Email..." value="{{ request('search') }}">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
+
+                @if(request('search') || request('course') || request('batch'))
+                    <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                @endif
             </form>
         </div>
         
@@ -83,9 +99,9 @@
                             <td colspan="6" class="text-center py-5 text-muted">
                                 <i class="fas fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
                                 <h5 class="fw-bold text-secondary">No records found.</h5>
-                                @if(request('search'))
-                                    <p>No results matched your search for "<strong>{{ request('search') }}</strong>".</p>
-                                    <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Search</a>
+                                @if(request('search') || request('course') || request('batch'))
+                                    <p>No results matched your applied filters.</p>
+                                    <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
                                 @endif
                             </td>
                         </tr>

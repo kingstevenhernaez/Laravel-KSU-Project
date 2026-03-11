@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 
 use App\Models\News;
 use App\Models\User; 
+use App\Models\MisAlumniRecord; // 🟢 Added for Dashboard MIS counts
 
 /*
 |--------------------------------------------------------------------------
@@ -66,26 +67,36 @@ Route::get('/news/{slug}', function ($slug) {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // 🟢 DASHBOARD
-    Route::get('/dashboard', function () {
+    // 🟢 DASHBOARD (UPDATED FOR ICT FEEDBACK)
+    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $verifiedCount = User::where('status', 1)->count();
-        $pendingCount  = User::where('status', 0)->count();
+        $pendingCount  = User::where('status', 0)->count(); // Unverified Web Accounts
+        $unclaimedCount = MisAlumniRecord::where('is_claimed', false)->count(); // The missing MIS count!
         $totalUsers    = User::count();
         $recentUsers   = User::orderBy('created_at', 'desc')->take(5)->get();
 
-        $employmentData = User::select('employment_status', DB::raw('count(*) as total'))
-            ->whereNotNull('employment_status')->where('employment_status', '!=', '')
-            ->groupBy('employment_status')->pluck('total', 'employment_status')->toArray();
+        // Dropdown Data for ICT Filters
+        $courses = User::where('role', 2)->whereNotNull('course')->where('course', '!=', '')->distinct()->orderBy('course')->pluck('course');
+        $batches = User::where('role', 2)->whereNotNull('batch')->where('batch', '!=', '')->distinct()->orderBy('batch', 'desc')->pluck('batch');
+
+        // Employment Query with ICT Filters Applied
+        $empQuery = User::select('employment_status', DB::raw('count(*) as total'))
+            ->whereNotNull('employment_status')->where('employment_status', '!=', '');
+        
+        if ($request->filled('course')) { $empQuery->where('course', $request->course); }
+        if ($request->filled('batch')) { $empQuery->where('batch', $request->batch); }
+        
+        $employmentData = $empQuery->groupBy('employment_status')->pluck('total', 'employment_status')->toArray();
 
         $batchData = User::select('batch', DB::raw('count(*) as total'))
             ->whereNotNull('batch')->where('batch', '!=', '')
             ->groupBy('batch')->orderBy('total', 'desc')->take(5)
             ->pluck('total', 'batch')->toArray();
 
-        return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData'));
+        return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'unclaimedCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData', 'courses', 'batches'));
     })->name('dashboard');
 
-    // 🟢 STAFF & ROLE MANAGEMENT (Moved from admin.php)
+    // 🟢 STAFF & ROLE MANAGEMENT 
     Route::get('/staff', [RoleManagementController::class, 'index'])->name('roles.index');
     Route::get('/staff/create', [RoleManagementController::class, 'create'])->name('roles.create');
     Route::post('/staff/store', [RoleManagementController::class, 'store'])->name('roles.store');
@@ -94,12 +105,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::delete('/staff/{id}', [RoleManagementController::class, 'destroy'])->name('roles.destroy');
     Route::put('/staff/{id}/password', [RoleManagementController::class, 'updatePassword'])->name('roles.password');
 
-    // 🟢 MIS SYNCHRONIZATION (Moved from admin.php)
+    // 🟢 MIS SYNCHRONIZATION 
     Route::get('/mis-sync', [MisSyncController::class, 'index'])->name('mis_sync.index');
     Route::post('/mis-sync/upload', [MisSyncController::class, 'uploadCsv'])->name('mis_sync.upload');
     Route::post('/mis-sync/api', [MisSyncController::class, 'syncFromApi'])->name('mis_sync.api');
 
-    // 🟢 EVENTS (Moved from admin.php)
+    // 🟢 EVENTS 
     Route::get('/events', [EventController::class, 'index'])->name('events.index');
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/events/store', [EventController::class, 'store'])->name('events.store');
@@ -107,13 +118,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.destroy');
 
-    // 🟢 NEWS & UPDATES (Moved from admin.php)
+    // 🟢 NEWS & UPDATES 
     Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
     Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
     Route::post('/news/store', [AdminNewsController::class, 'store'])->name('news.store');
     Route::delete('/news/{id}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
 
-    // 🟢 ADMIN PROFILE (Moved from admin.php)
+    // 🟢 ADMIN PROFILE 
     Route::get('/profile', [AdminProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
 
@@ -128,26 +139,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/reports/api/courses', [ReportController::class, 'searchCourses'])->name('reports.api.courses');
     Route::get('/reports/api/batches', [ReportController::class, 'searchBatches'])->name('reports.api.batches');
     
-    // 🟢 MASTERLIST (WITH SEARCH)
-    Route::get('/alumni', function (\Illuminate\Http\Request $request) {
-        $query = User::where('role', 2)->where('status', 1);
-        
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('student_id', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-        
-        $alumni = $query->orderBy('created_at', 'desc')->paginate(10);
-        $pageTitle = "Alumni Master List";
-        return view('admin.alumni.index', compact('alumni', 'pageTitle'));
-    })->name('alumni.index');
-
-// 🟢 MASTERLIST & UNCLAIMED RECORDS (Pointed to Controller)
+    // 🟢 MASTERLIST & UNCLAIMED RECORDS
     Route::get('/alumni', [AlumniController::class, 'index'])->name('alumni.index');
     Route::get('/unclaimed-records', [AlumniController::class, 'pending'])->name('claims.index');
 
@@ -171,7 +163,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/tracer', [AdminTracerController::class, 'index'])->name('tracer.index');
     Route::get('/tracer/create', [AdminTracerController::class, 'create'])->name('tracer.create'); 
     Route::post('/tracer', [AdminTracerController::class, 'store'])->name('tracer.store'); 
-    Route::get('/tracer/answers/{id}', [AdminTracerController::class, 'show'])->name('tracer.answers'); // Fallback for old links
+    Route::get('/tracer/answers/{id}', [AdminTracerController::class, 'show'])->name('tracer.answers'); 
     Route::get('/tracer/{id}', [AdminTracerController::class, 'show'])->name('tracer.show'); 
     Route::get('/tracer/export/{id}', [AdminTracerController::class, 'exportAnswers'])->name('tracer.export');
     Route::delete('/tracer/{id}', [AdminTracerController::class, 'destroy'])->name('tracer.destroy'); 

@@ -31,21 +31,34 @@ class AlumniDashboardController extends Controller
         }
 
         // EVENT LOGIC
-        // We only show events that are scheduled for today or in the future
         $events = [];
         if (Schema::hasTable('events')) {
             $events = Event::where('date', '>=', now())
                            ->orderBy('date', 'asc')
-                           ->take(3) // Shows the next 3 upcoming events
+                           ->take(3) 
                            ->get();
         }
 
-        // 🟢 NEW: TRACER STUDY LOGIC (Dynamic Surveys)
+        // 🟢 NEW: TRACER STUDY LOGIC (With ICT Targeting Rules Applied)
         $activeSurveyId = null;
         $pendingSurveys = 0;
 
-        // Fetch the latest active survey from the new 'surveys' table
-        $latestSurvey = \App\Models\Survey::where('is_active', 1)->latest()->first();
+        // Fetch the latest active survey that matches the alumni's specific Course and Batch
+        $latestSurvey = \App\Models\Survey::where('is_active', 1)
+            ->where(function ($query) use ($user) {
+                // If target_course is empty, it means "All Courses". Otherwise, it must match the user's course.
+                $query->whereNull('target_course')
+                      ->orWhere('target_course', '')
+                      ->orWhere('target_course', $user->course);
+            })
+            ->where(function ($query) use ($user) {
+                // If target_batch is empty, it means "All Batches". Otherwise, it must match the user's batch.
+                $query->whereNull('target_batch')
+                      ->orWhere('target_batch', '')
+                      ->orWhere('target_batch', $user->batch);
+            })
+            ->latest()
+            ->first();
 
         if ($latestSurvey) {
             // Check if the current user has answered it
@@ -62,25 +75,17 @@ class AlumniDashboardController extends Controller
         return view('alumni.dashboard', compact('user', 'jobs', 'pendingSurveys', 'activeSurveyId', 'events'));
     }
 
-    /**
-     * Dedicated page to view all events
-     */
-   public function allEvents()
+    public function allEvents()
     {
         $user = Auth::user();
-        // Fetch all events, paginated
         $events = \App\Models\Event::orderBy('date', 'desc')->paginate(12);
-        
         return view('alumni.events.index', compact('user', 'events'));
     }
 
     public function jobs()
     {
         $user = Auth::user();
-        $jobs = JobPost::where('is_active', 1)
-                       ->orderBy('created_at', 'desc')
-                       ->paginate(10);
-
+        $jobs = JobPost::where('is_active', 1)->orderBy('created_at', 'desc')->paginate(10);
         return view('alumni.jobs', compact('user', 'jobs'));
     }
 }

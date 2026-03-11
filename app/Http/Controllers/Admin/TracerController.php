@@ -20,7 +20,11 @@ class TracerController extends Controller
     // 2. Show the Survey Builder Form
     public function create()
     {
-        return view('admin.tracer.create');
+        // Fetch unique courses and batches for the targeting dropdowns
+        $courses = \App\Models\User::where('role', 2)->whereNotNull('course')->where('course', '!=', '')->distinct()->orderBy('course')->pluck('course');
+        $batches = \App\Models\User::where('role', 2)->whereNotNull('batch')->where('batch', '!=', '')->distinct()->orderBy('batch', 'desc')->pluck('batch');
+        
+        return view('admin.tracer.create', compact('courses', 'batches'));
     }
 
     // 3. Store Dynamic Survey and Questions
@@ -35,6 +39,8 @@ class TracerController extends Controller
         $survey = new Survey();
         $survey->title = $request->title;
         $survey->description = $request->description;
+        $survey->target_course = $request->target_course;
+        $survey->target_batch = $request->target_batch;
         $survey->is_active = 1;
         $survey->is_ched_template = $request->has('is_ched_template') ? 1 : 0;
         $survey->created_by = Auth::id(); 

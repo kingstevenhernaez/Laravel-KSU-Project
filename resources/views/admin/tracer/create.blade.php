@@ -35,15 +35,39 @@
         @endif
 
         {{-- BASIC INFO CARD --}}
+       {{-- BASIC INFO CARD --}}
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="mb-4">
                     <label class="form-label fw-bold text-uppercase small text-muted">Survey Title <span class="text-danger">*</span></label>
                     <input type="text" name="title" id="surveyTitle" class="form-control form-control-lg bg-light" placeholder="e.g., Graduate Tracer Study 2026" required>
                 </div>
-                <div>
+                <div class="mb-4">
                     <label class="form-label fw-bold text-uppercase small text-muted">Instructions / Description</label>
                     <textarea name="description" id="surveyDescription" class="form-control bg-light" rows="3" placeholder="Provide instructions for the alumni answering this survey..."></textarea>
+                </div>
+                
+                {{-- 🟢 THE FIX: ICT Target Audience Selection --}}
+                <div class="row bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25 mx-0">
+                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-bullseye me-2"></i> Target Audience (Optional)</h6>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-dark">Target Program/Course</label>
+                        <select name="target_course" class="form-select border-primary border-opacity-50">
+                            <option value="">Send to All Programs</option>
+                            @foreach($courses as $c)
+                                <option value="{{ $c }}">{{ $c }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-dark">Target Batch / Graduation Year</label>
+                        <select name="target_batch" class="form-select border-primary border-opacity-50">
+                            <option value="">Send to All Batches</option>
+                            @foreach($batches as $b)
+                                <option value="{{ $b }}">Batch {{ $b }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>

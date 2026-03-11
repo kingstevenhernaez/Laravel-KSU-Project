@@ -2,71 +2,84 @@
 
 @section('content')
 
-{{-- 🟢 BULLETPROOF OVERRIDE: Fetches the live data directly if the route fails --}}
+{{-- 🟢 BULLETPROOF OVERRIDE --}}
 @php
     $verifiedCount = $verifiedCount ?? \App\Models\User::where('status', 1)->count();
     $pendingCount  = $pendingCount ?? \App\Models\User::where('status', 0)->count();
+    $unclaimedCount = $unclaimedCount ?? \App\Models\MisAlumniRecord::where('is_claimed', false)->count();
     $totalUsers    = $totalUsers ?? \App\Models\User::count();
     $recentUsers   = $recentUsers ?? \App\Models\User::orderBy('created_at', 'desc')->take(5)->get();
 
+    // Default arrays if route override fails
+    $courses = $courses ?? [];
+    $batches = $batches ?? [];
+
     $employmentData = $employmentData ?? \App\Models\User::select('employment_status', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-        ->whereNotNull('employment_status')
-        ->where('employment_status', '!=', '')
-        ->groupBy('employment_status')
-        ->pluck('total', 'employment_status')
-        ->toArray();
+        ->whereNotNull('employment_status')->where('employment_status', '!=', '')
+        ->groupBy('employment_status')->pluck('total', 'employment_status')->toArray();
 
     $batchData = $batchData ?? \App\Models\User::select('batch', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-        ->whereNotNull('batch')
-        ->where('batch', '!=', '')
-        ->groupBy('batch')
-        ->orderBy('total', 'desc')
-        ->take(5)
-        ->pluck('total', 'batch')
-        ->toArray();
+        ->whereNotNull('batch')->where('batch', '!=', '')
+        ->groupBy('batch')->orderBy('total', 'desc')->take(5)->pluck('total', 'batch')->toArray();
 @endphp
 
 <div class="container-fluid py-4">
 
-    {{-- TOP ROW: Live Core Metrics --}}
+    {{-- TOP ROW: 4 Core Metrics to clear up ICT Confusion --}}
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
             <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-success border-4">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
-                        <i class="fas fa-user-graduate fa-2x"></i>
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                        <i class="fas fa-user-check fa-lg"></i>
                     </div>
                     <div>
                         <p class="text-muted small fw-bold text-uppercase mb-0">Verified Alumni</p>
-                        <h2 class="fw-bold text-dark mb-0">{{ $verifiedCount }}</h2>
+                        <h3 class="fw-bold text-dark mb-0">{{ $verifiedCount }}</h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
             <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-warning border-4">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
-                        <i class="fas fa-hourglass-half fa-2x"></i>
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                        <i class="fas fa-user-clock fa-lg"></i>
                     </div>
                     <div>
-                        <p class="text-muted small fw-bold text-uppercase mb-0">Pending Claims</p>
-                        <h2 class="fw-bold text-dark mb-0">{{ $pendingCount }}</h2>
+                        <p class="text-muted small fw-bold text-uppercase mb-0">Unverified Web Accts</p>
+                        <h3 class="fw-bold text-dark mb-0">{{ $pendingCount }}</h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
+            <a href="{{ route('admin.claims.index') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-danger border-4 transition-hover">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                            <i class="fas fa-database fa-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-muted small fw-bold text-uppercase mb-0">Unclaimed MIS Records</p>
+                            <h3 class="fw-bold text-dark mb-0">{{ $unclaimedCount }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
             <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-primary border-4">
-                <div class="card-body p-4 d-flex align-items-center">
-                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 60px; height: 60px;">
-                        <i class="fas fa-users fa-2x"></i>
+                <div class="card-body p-3 d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                        <i class="fas fa-users fa-lg"></i>
                     </div>
                     <div>
                         <p class="text-muted small fw-bold text-uppercase mb-0">Total Registered</p>
-                        <h2 class="fw-bold text-dark mb-0">{{ $totalUsers }}</h2>
+                        <h3 class="fw-bold text-dark mb-0">{{ $totalUsers }}</h3>
                     </div>
                 </div>
             </div>
@@ -75,15 +88,35 @@
 
     {{-- MIDDLE ROW: Advanced Analytics Charts --}}
     <div class="row mb-4">
-        {{-- Chart 1: Employment Status --}}
-        <div class="col-md-6">
+        {{-- Chart 1: Employment Status WITH FILTERS --}}
+        <div class="col-md-7">
             <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-bottom py-3">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i> Employment Distribution</h6>
+                    
+                    {{-- 🟢 ICT Requested Filters (Course & Batch) --}}
+                    <form action="{{ route('admin.dashboard') }}" method="GET" class="d-flex gap-2">
+                        <select name="course" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">All Programs</option>
+                            @foreach($courses as $c)
+                                <option value="{{ $c }}" {{ request('course') == $c ? 'selected' : '' }}>{{ $c }}</option>
+                            @endforeach
+                        </select>
+                        <select name="batch" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">All Batches</option>
+                            @foreach($batches as $b)
+                                <option value="{{ $b }}" {{ request('batch') == $b ? 'selected' : '' }}>{{ $b }}</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                        @if(request('course') || request('batch'))
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        @endif
+                    </form>
                 </div>
                 <div class="card-body d-flex justify-content-center align-items-center p-4" style="position: relative; height: 300px;">
                     @if(empty($employmentData))
-                        <p class="text-muted small text-center">No career data available yet.<br>Alumni need to update their profiles.</p>
+                        <p class="text-muted small text-center">No employment data available for this selection.</p>
                     @else
                         <canvas id="employmentChart"></canvas>
                     @endif
@@ -92,7 +125,7 @@
         </div>
 
         {{-- Chart 2: Top Batches --}}
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white border-bottom py-3">
                     <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-bar me-2 text-success"></i> Registered Alumni by Batch</h6>
@@ -215,4 +248,9 @@
         @endif
     });
 </script>
+
+<style>
+    .transition-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .transition-hover:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+</style>
 @endsection

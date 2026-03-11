@@ -36,13 +36,24 @@
         @media print { .no-print { display: none !important; } body { -webkit-print-color-adjust: exact; } }
     </style>
 </head>
-<body>
-    <div class="container-fluid py-2">
-        <div class="d-flex justify-content-end mb-3 no-print">
-            <button onclick="window.close()" class="btn btn-sm btn-secondary me-2">Close</button>
-            <button onclick="window.print()" class="btn btn-sm btn-success fw-bold"><i class="fas fa-print"></i> Print Report</button>
+<body class="bg-light">
+    {{-- 🟢 THE FIX: ICT Preview Mode Bar --}}
+    <div class="no-print bg-dark text-white p-3 mb-4 sticky-top shadow d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0 fw-bold"><i class="fas fa-search me-2 text-warning"></i> Report Preview Mode</h5>
+            <small class="text-white-50">Please review the data below. Click Print when you are ready.</small>
         </div>
+        <div>
+            <button onclick="window.close()" class="btn btn-outline-light me-2 fw-bold">Cancel</button>
+            <button onclick="window.print()" class="btn btn-warning text-dark fw-bold shadow-sm">
+                <i class="fas fa-print me-2"></i> Print Final Report
+            </button>
+        </div>
+    </div>
 
+    {{-- The physical paper container --}}
+    <div class="container-fluid py-2 bg-white shadow-sm" style="max-width: 210mm; min-height: 297mm; padding: 15mm; margin: 0 auto;">
+        
         <div class="letterhead">
             <div class="logo-container"><img src="{{ asset('assets/images/branding/ksu-logo.png') }}" alt="KSU Logo"></div>
             <div class="header-text">
@@ -51,7 +62,6 @@
                 <h2 class="alumni-org">Federated Alumni Association Inc.</h2>
                 <p class="address-text">City of Tabuk, Kalinga</p>
             </div>
-            {{-- 🟢 CORRECTED LOGO FILENAME: ksu-alumni-logo.png --}}
             <div class="logo-container"><img src="{{ asset('assets/images/branding/ksu-alumni-logo.png') }}" alt="Alumni Logo" onerror="this.style.display='none'"></div>
         </div>
 
@@ -62,7 +72,6 @@
             <thead>
                 <tr>
                     <th width="3%">No.</th>
-                    {{-- DYNAMIC HEADERS --}}
                     @if(in_array('id_number', $columns)) <th width="12%">ID Number</th> @endif
                     @if(in_array('fullname', $columns))  <th>Full Name</th> @endif
                     @if(in_array('course', $columns))    <th>Course</th> @endif
@@ -77,39 +86,14 @@
                 @forelse($alumni as $index => $alum)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    
-                    {{-- DYNAMIC DATA CELLS (Must match header order) --}}
-                    @if(in_array('id_number', $columns))
-                        <td class="text-center">{{ $alum->student_id ?? ($alum->misRecord->student_id ?? 'N/A') }}</td>
-                    @endif
-
-                    @if(in_array('fullname', $columns))
-                        <td><strong>{{ strtoupper($alum->last_name) }}</strong>, {{ $alum->first_name }}</td>
-                    @endif
-
-                    @if(in_array('course', $columns))
-                        <td>{{ $alum->misRecord->course ?? ($alum->course ?? 'N/A') }}</td>
-                    @endif
-
-                    @if(in_array('batch', $columns))
-                        <td class="text-center">{{ $alum->misRecord->year_graduated ?? ($alum->batch ?? 'N/A') }}</td>
-                    @endif
-
-                    @if(in_array('email', $columns))
-                        <td>{{ $alum->email }}</td>
-                    @endif
-
-                    @if(in_array('emp_status', $columns))
-                        <td class="text-center">{{ $alum->employment_status ?? 'Unspecified' }}</td>
-                    @endif
-
-                    @if(in_array('company', $columns))
-                        <td>{{ $alum->company ?? '' }}</td>
-                    @endif
-
-                    @if(in_array('job_title', $columns))
-                        <td>{{ $alum->job_title ?? '' }}</td>
-                    @endif
+                    @if(in_array('id_number', $columns)) <td class="text-center">{{ $alum->student_id ?? ($alum->misRecord->student_id ?? 'N/A') }}</td> @endif
+                    @if(in_array('fullname', $columns))  <td><strong>{{ strtoupper($alum->last_name) }}</strong>, {{ $alum->first_name }}</td> @endif
+                    @if(in_array('course', $columns))    <td>{{ $alum->misRecord->course ?? ($alum->course ?? 'N/A') }}</td> @endif
+                    @if(in_array('batch', $columns))     <td class="text-center">{{ $alum->misRecord->year_graduated ?? ($alum->batch ?? 'N/A') }}</td> @endif
+                    @if(in_array('email', $columns))     <td>{{ $alum->email }}</td> @endif
+                    @if(in_array('emp_status', $columns))<td class="text-center">{{ $alum->employment_status ?? 'Unspecified' }}</td> @endif
+                    @if(in_array('company', $columns))   <td>{{ $alum->company ?? '' }}</td> @endif
+                    @if(in_array('job_title', $columns)) <td>{{ $alum->job_title ?? '' }}</td> @endif
                 </tr>
                 @empty
                 <tr><td colspan="{{ count($columns) + 1 }}" class="text-center p-3 fst-italic">No records found for these filters.</td></tr>
@@ -121,13 +105,12 @@
             <div class="signature-box">
                 <p class="mb-0">Prepared and Certified Correct by:</p>
                 <div class="signature-line"></div>
-                {{-- USES THE AUTHENTICATED USER'S NAME --}}
                 <p class="signature-name">{{ strtoupper($signatory->first_name . ' ' . $signatory->last_name) }}</p>
                 <p class="signature-title">System Administrator / OIC</p>
                 <p class="signature-title" style="font-size: 8pt;">Date Signed: {{ date('m/d/Y') }}</p>
             </div>
         </div>
     </div>
-    <script>window.onload = function() { window.print(); }</script>
+    {{-- 🟢 AUTO-PRINT REMOVED: Replaced with manual button in the top bar --}}
 </body>
 </html>

@@ -13,12 +13,22 @@ class TracerController extends Controller
     // View the active survey questions
     public function show($id)
     {
+        $user = Auth::user();
+
         // 1. Fetch the survey and its questions
         $survey = Survey::with('questions')->findOrFail($id);
 
+        // 🟢 SECURITY FIX: Prevent URL guessing. Verify the user is actually allowed to take this survey.
+        $courseMismatch = !empty($survey->target_course) && $survey->target_course != $user->course;
+        $batchMismatch = !empty($survey->target_batch) && $survey->target_batch != $user->batch;
+
+        if ($courseMismatch || $batchMismatch) {
+            return redirect()->route('alumni.dashboard')->with('error', 'This specific survey is not intended for your program or batch.');
+        }
+
         // 2. Check if the user has already answered this survey
         $hasAnswered = SurveyAnswer::where('survey_id', $id)
-                                   ->where('user_id', Auth::id())
+                                   ->where('user_id', $user->id)
                                    ->exists();
 
         // 3. If already answered, prevent them from answering again
@@ -41,7 +51,6 @@ class TracerController extends Controller
         }
 
         // Loop through the submitted answers and save them
-        // The form will send data as an array: answers[question_id] = "their answer"
         if ($request->has('answers')) {
             foreach ($request->answers as $questionId => $answerData) {
                 
