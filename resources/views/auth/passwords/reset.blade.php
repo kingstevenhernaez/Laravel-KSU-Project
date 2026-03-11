@@ -1,70 +1,54 @@
 @extends('auth.layouts.app')
-@push('title')
-    {{ __('Reset Password') }}
-@endpush
+
 @section('content')
-<div class="register-area">
-    <div class="register-wrap">
-        <div class="register-left section-bg-img"
-            style="background-image: url({{ getSettingImage('login_left_image') }})">
-            <div class="register-left-wrap">
-                <a class="d-inline-block mb-26 max-w-150" href="{{route('login')}}"><img
-                        src="{{ getSettingImage('app_logo') }}" alt="{{ getOption('app_name') }}" /></a>
-                <h2 class="fs-36 fw-600 lh-34 text-white pb-8">{{ getOption('sign_up_left_text_title') }}</h2>
-                <p class="fs-16 fw-400 lh-24 text-white">{{ getOption('sign_up_left_text_subtitle') }}</p>
-            </div>
-        </div>
-        <div class="register-right">
-            <div class="primary-form">
-                <!-- Title -->
-                <div class="pb-40">
-                    <h2 class="fs-32 fw-600 lh-38 text-1b1c17 pb-3">{{ __('Set your new password') }}</h2>
+<div class="login-container d-flex justify-content-center align-items-center py-5" style="min-height: 100vh; background-color: #f8f9fa;">
+    <div class="card shadow-lg border-0" style="width: 100%; max-width: 500px; border-radius: 12px;">
+        <div class="card-body p-5">
+            
+            <div class="text-center mb-4">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 60px; height: 60px;">
+                    <i class="fas fa-unlock-alt fa-2x"></i>
                 </div>
-                <!-- Form -->
-                 <!-- Form -->
-                     <form method="POST" action="{{ route('password.update.custom', $token) }}">
-                    @csrf
-                    <div class="pb-25">
-                        <div class="primary-form-group">
-                            <div class="primary-form-group-wrap">
-                                <label for="EmailAddress" class="form-label">{{ __('Email Address') }}</label>
-                                <input type="text" class="primary-form-control" id="EmailAddress" name="email"
-                                    value="{{ old(" email") }}" placeholder="{{ __(" Your Email") }}" required />
-                            </div>
-                            @error('email')
-                            <span class="fs-12 text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="pb-25">
-                        <div class="primary-form-group">
-                            <div class="primary-form-group-wrap">
-                                <label for="password" class="form-label">{{ __('New Password') }}</label>
-                                <input type="password" class="primary-form-control" id="password" name="password"
-                                    value="{{ old("password") }}" placeholder="{{ __(" Your New Password") }}" required />
-                            </div>
-                            @error('password')
-                            <span class="fs-12 text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="pb-25">
-                        <div class="primary-form-group">
-                            <div class="primary-form-group-wrap">
-                                <label for="password_confirmation" class="form-label">{{ __('Confirm Password') }}</label>
-                                <input type="password" class="primary-form-control" id="password_confirmation" name="password_confirmation"
-                                    value="{{ old("password_confirmation") }}" placeholder="{{ __(" Your Confirm Password") }}" required />
-                            </div>
-                            @error('password_confirmation')
-                            <span class="fs-12 text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                    <button type="submit"
-                        class="d-flex justify-content-center align-items-center w-100 border-0 fs-15 fw-500 lh-25 text-1b1c17 p-13 bd-ra-12 bg-cdef84 hover-bg-one">{{
-                        __('Update') }}</button>
-                </form>
+                <h2 class="fw-bold text-dark">Create New Password</h2>
+                <p class="text-muted">Please enter your new password below. Make sure it is at least 8 characters long.</p>
             </div>
+
+            {{-- THE FIX: Uses standard Laravel password.update route --}}
+            <form method="POST" action="{{ route('password.update') }}">
+                @csrf
+
+                {{-- Hidden Password Reset Token (Required by Laravel) --}}
+                <input type="hidden" name="token" value="{{ $token }}">
+
+                {{-- Email Field (Read-only for security) --}}
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-secondary">Email Address</label>
+                    <input type="email" name="email" class="form-control form-control-lg bg-light @error('email') is-invalid @enderror" value="{{ $email ?? old('email') }}" required readonly>
+                    @error('email') 
+                        <span class="text-danger small fw-bold mt-1 d-block">{{ $message }}</span> 
+                    @enderror
+                </div>
+
+                {{-- New Password --}}
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-secondary">New Password</label>
+                    <input type="password" name="password" class="form-control form-control-lg bg-light @error('password') is-invalid @enderror" placeholder="Minimum 8 characters" required autofocus>
+                    @error('password') 
+                        <span class="text-danger small fw-bold mt-1 d-block">{{ $message }}</span> 
+                    @enderror
+                </div>
+
+                {{-- Confirm Password --}}
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-secondary">Confirm New Password</label>
+                    <input type="password" name="password_confirmation" class="form-control form-control-lg bg-light" placeholder="Type password again" required>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm">
+                    Save New Password <i class="fas fa-check-circle ms-2"></i>
+                </button>
+            </form>
+
         </div>
     </div>
 </div>
