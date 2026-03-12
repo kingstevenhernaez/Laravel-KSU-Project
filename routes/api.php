@@ -74,7 +74,18 @@ Route::post('/login', [AuthController::class, 'login']);
 // 🟢 Protected Routes: Require valid Token from the Flutter app
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-
+    // Fetch Active Tracer Studies / Surveys
+Route::get('/surveys', [\App\Http\Controllers\Api\SurveyController::class, 'index']);
+Route::post('/employment-history', [\App\Http\Controllers\Api\ProfileController::class, 'addJob']);
+// 🟢 Delete a specific job history entry
+Route::delete('/employment-history/{id}', [\App\Http\Controllers\Api\EmploymentController::class, 'destroy']);
     // Fetch Job Postings for the Dashboard
     Route::get('/jobs', [\App\Http\Controllers\Api\JobController::class, 'index']);
+
+    Route::get('/employment-history', [EmploymentController::class, 'index']);
+    Route::post('/employment-history', [EmploymentController::class, 'store']);
+    Route::delete('/employment-history/{id}', [EmploymentController::class, 'destroy']);
+    Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+    // Get the logged-in alumnus's full profile (including course & photo URL)
+Route::get('/my-profile', [\App\Http\Controllers\Api\AlumniProfileController::class, 'show']);
 });
