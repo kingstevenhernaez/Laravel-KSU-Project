@@ -87,5 +87,5 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Profile & ID Card Integration
     Route::get('/my-profile', [AlumniProfileController::class, 'show']);
-    Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::post('/profile/update', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
 });
