@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 
 class ProfileController extends Controller
 {
@@ -13,30 +12,24 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // 1. Validation logic mirrored from your web base
+        // 1. Relaxed validation (Removed strict mimes to ensure Flutter Web blobs pass)
         $request->validate([
             'email'  => 'required|email|unique:users,email,' . $user->id,
             'mobile' => 'nullable|string|max:20',
-            'image'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048', 
+            'image'  => 'nullable|image|max:5000', 
         ]);
 
-        // 2. Handle Image Upload & Garbage Collection
         if ($request->hasFile('image')) {
-            // Delete old image if it exists to maximize storage
+            // 2. Safely delete the old image
             if ($user->image && Storage::disk('public')->exists($user->image)) {
                 Storage::disk('public')->delete($user->image);
             }
 
+            // 3. Native Laravel Upload (Bypasses Intervention Image completely)
             $file = $request->file('image');
-            $filename = 'profile_' . $user->id . '_' . time() . '.jpg';
-            $storagePath = 'profiles/' . $filename;
-
-            // Shrink and compress image to maximize server storage
-            $img = Image::make($file->getRealPath());
-            $img->fit(500, 500)->encode('jpg', 80);
-
-            Storage::disk('public')->put($storagePath, (string) $img);
-            $user->image = $storagePath;
+            $path = $file->store('profiles', 'public'); // Automatically generates a unique name
+            
+            $user->image = $path;
         }
 
         $user->email = $request->email;
