@@ -88,4 +88,6 @@ Route::delete('/employment-history/{id}', [\App\Http\Controllers\Api\EmploymentC
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     // Get the logged-in alumnus's full profile (including course & photo URL)
 Route::get('/my-profile', [\App\Http\Controllers\Api\AlumniProfileController::class, 'show']);
+Route::post('/profile/update', [ProfileController::class, 'update']);
+
 });
