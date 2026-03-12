@@ -7,13 +7,15 @@ use App\Http\Controllers\addon\committee\alumni\NominationController;
 use App\Http\Controllers\addon\donation\frontend\DonationController;
 use App\Http\Controllers\Alumni\OrderController;
 use App\Http\Controllers\Api\EnrollmentSyncController;
+use App\Http\Controllers\Api\AuthController; // 🟢 Added for Mobile App Auth
 
 use App\Http\Middleware\CheckEnrollmentApiKey; 
-use App\Models\User; // 🟢 Added this so the API can fetch the Alumni data
+use App\Models\User; 
 
 // The Real Endpoint (Using the Class Name directly, no nickname needed)
 Route::post('/v1/sync-graduate', [EnrollmentSyncController::class, 'syncGraduate'])
     ->middleware(CheckEnrollmentApiKey::class); 
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -57,4 +59,22 @@ Route::get('/v1/job-history/{student_id}', function (Request $request, $student_
             ];
         })
     ], 200);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| MOBILE APP API ROUTES (FLUTTER)
+|--------------------------------------------------------------------------
+*/
+
+// 🟢 Public Route: App Login (Generates Token)
+Route::post('/login', [AuthController::class, 'login']);
+
+// 🟢 Protected Routes: Require valid Token from the Flutter app
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Fetch Job Postings for the Dashboard
+    Route::get('/jobs', [\App\Http\Controllers\Api\JobController::class, 'index']);
 });
