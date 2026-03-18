@@ -22,7 +22,9 @@
                         <p class="card-text text-muted">{{ \Illuminate\Support\Str::limit($event->description, 150) }}</p>
                     </div>
                     <div class="card-footer bg-white border-0 pb-3">
-                        <button class="btn btn-outline-success btn-sm w-100">Event Details</button>
+                        <a href="{{ url('/portal/events/' . $event->id) }}" class="btn btn-outline-success btn-sm w-100">
+                            Event Details
+                        </a>
                     </div>
                 </div>
             </div>

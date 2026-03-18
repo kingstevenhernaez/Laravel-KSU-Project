@@ -195,3 +195,21 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
 });
 
 Route::middleware(['auth'])->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])->name('jobs.apply');
+
+/*
+|--------------------------------------------------------------------------
+| Alumni Portal: Event Details Route
+|--------------------------------------------------------------------------
+*/
+Route::get('/portal/events/{id}', function ($id) {
+    // Safely fetch the specific event from the database
+    $event = \DB::table('events')->where('id', $id)->first();
+    
+    // If someone types a fake ID, show a 404 page instead of crashing
+    if (!$event) {
+        abort(404, 'Event not found.');
+    }
+    
+    // Load the details view and pass the event data to it
+    return view('alumni.events.show', compact('event'));
+});
