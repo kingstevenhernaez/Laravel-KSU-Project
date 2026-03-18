@@ -27,7 +27,7 @@ use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 
 use App\Models\News;
 use App\Models\User; 
-use App\Models\MisAlumniRecord; // 🟢 Added for Dashboard MIS counts
+use App\Models\MisAlumniRecord; 
 
 /*
 |--------------------------------------------------------------------------
@@ -62,24 +62,22 @@ Route::get('/news/{slug}', function ($slug) {
 
 /*
 |--------------------------------------------------------------------------
-| 2. ADMIN PANEL ROUTES (FULLY UNIFIED)
+| 2. ADMIN PANEL ROUTES
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // 🟢 DASHBOARD (UPDATED FOR ICT FEEDBACK)
+    // DASHBOARD
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $verifiedCount = User::where('status', 1)->count();
-        $pendingCount  = User::where('status', 0)->count(); // Unverified Web Accounts
-        $unclaimedCount = MisAlumniRecord::where('is_claimed', false)->count(); // The missing MIS count!
+        $pendingCount  = User::where('status', 0)->count(); 
+        $unclaimedCount = MisAlumniRecord::where('is_claimed', false)->count(); 
         $totalUsers    = User::count();
         $recentUsers   = User::orderBy('created_at', 'desc')->take(5)->get();
 
-        // Dropdown Data for ICT Filters
         $courses = User::where('role', 2)->whereNotNull('course')->where('course', '!=', '')->distinct()->orderBy('course')->pluck('course');
         $batches = User::where('role', 2)->whereNotNull('batch')->where('batch', '!=', '')->distinct()->orderBy('batch', 'desc')->pluck('batch');
 
-        // Employment Query with ICT Filters Applied
         $empQuery = User::select('employment_status', DB::raw('count(*) as total'))
             ->whereNotNull('employment_status')->where('employment_status', '!=', '');
         
@@ -96,7 +94,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         return view('admin.dashboard', compact('verifiedCount', 'pendingCount', 'unclaimedCount', 'totalUsers', 'recentUsers', 'employmentData', 'batchData', 'courses', 'batches'));
     })->name('dashboard');
 
-    // 🟢 STAFF & ROLE MANAGEMENT 
+    // STAFF & ROLE MANAGEMENT 
     Route::get('/staff', [RoleManagementController::class, 'index'])->name('roles.index');
     Route::get('/staff/create', [RoleManagementController::class, 'create'])->name('roles.create');
     Route::post('/staff/store', [RoleManagementController::class, 'store'])->name('roles.store');
@@ -105,12 +103,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::delete('/staff/{id}', [RoleManagementController::class, 'destroy'])->name('roles.destroy');
     Route::put('/staff/{id}/password', [RoleManagementController::class, 'updatePassword'])->name('roles.password');
 
-    // 🟢 MIS SYNCHRONIZATION 
+    // MIS SYNCHRONIZATION 
     Route::get('/mis-sync', [MisSyncController::class, 'index'])->name('mis_sync.index');
     Route::post('/mis-sync/upload', [MisSyncController::class, 'uploadCsv'])->name('mis_sync.upload');
     Route::post('/mis-sync/api', [MisSyncController::class, 'syncFromApi'])->name('mis_sync.api');
 
-    // 🟢 EVENTS 
+    // EVENTS 
     Route::get('/events', [EventController::class, 'index'])->name('events.index');
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/events/store', [EventController::class, 'store'])->name('events.store');
@@ -118,32 +116,31 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/events/{id}', [EventController::class, 'destroy'])->name('events.destroy');
 
-    // 🟢 NEWS & UPDATES 
+    // NEWS & UPDATES 
     Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
     Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
     Route::post('/news/store', [AdminNewsController::class, 'store'])->name('news.store');
     Route::delete('/news/{id}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
 
-    // 🟢 ADMIN PROFILE 
+    // ADMIN PROFILE 
     Route::get('/profile', [AdminProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
 
-    // 🟢 EMAIL CENTER
+    // EMAIL CENTER
     Route::post('emails/send', [EmailController::class, 'send'])->name('emails.send');
     Route::get('email-center', [EmailController::class, 'index'])->name('emails.index');
     Route::get('email-center/create', [EmailController::class, 'create'])->name('emails.create');
 
-    // 🟢 REPORT GENERATOR
+    // REPORT GENERATOR
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/print', [ReportController::class, 'print'])->name('reports.print');
     Route::get('/reports/api/courses', [ReportController::class, 'searchCourses'])->name('reports.api.courses');
     Route::get('/reports/api/batches', [ReportController::class, 'searchBatches'])->name('reports.api.batches');
     
-    // 🟢 MASTERLIST & UNCLAIMED RECORDS
+    // MASTERLIST & UNCLAIMED RECORDS
     Route::get('/alumni', [AlumniController::class, 'index'])->name('alumni.index');
     Route::get('/unclaimed-records', [AlumniController::class, 'pending'])->name('claims.index');
 
-    // Status & Show Alumni
     Route::post('alumni/status/{id}', function ($id) {
         $user = User::findOrFail($id);
         $user->status = ($user->status == 1) ? 0 : 1;
@@ -154,12 +151,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('alumni/{id}', [AlumniController::class, 'show'])->name('alumni.show');
     Route::delete('alumni/{id}', [AlumniController::class, 'destroy'])->name('alumni.destroy');
 
-    // 🟢 JOBS
+    // JOBS
     Route::resource('jobs', JobController::class);
     Route::get('jobs/{id}/applicants', [JobController::class, 'applicants'])->name('jobs.applicants');
     Route::post('jobs/applications/{applicationId}/update', [JobController::class, 'updateApplicationStatus'])->name('jobs.application.status');
 
-    // 🟢 TRACER STUDY
+    // TRACER STUDY
     Route::get('/tracer', [AdminTracerController::class, 'index'])->name('tracer.index');
     Route::get('/tracer/create', [AdminTracerController::class, 'create'])->name('tracer.create'); 
     Route::post('/tracer', [AdminTracerController::class, 'store'])->name('tracer.store'); 
@@ -177,6 +174,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 */
 Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function () {
     Route::get('/events', [AlumniDashboardController::class, 'allEvents'])->name('events');
+    
+    Route::get('/events/{id}', function ($id) {
+        $event = \DB::table('events')->where('id', $id)->first();
+        if (!$event) { abort(404, 'Event not found.'); }
+        return view('alumni.events.show', compact('event'));
+    })->name('events.show');
+
     Route::get('/dashboard', [AlumniDashboardController::class, 'index'])->name('dashboard');
     Route::get('/id-card', [AlumniIDController::class, 'show'])->name('id_card');
     Route::get('/jobs', [AlumniDashboardController::class, 'jobs'])->name('jobs.index'); 
@@ -186,30 +190,33 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
     Route::post('/profile/password', [AlumniProfileController::class, 'changePassword'])->name('profile.password');
     Route::delete('/profile/photo', [AlumniProfileController::class, 'removePhoto'])->name('profile.remove_photo');
 
+    // 🟢 SYSTEM A: The Original Static Tracer Routes
     Route::get('/tracer/{id}', [AlumniTracerController::class, 'show'])->name('tracer.show');
     Route::post('/tracer/{id}', [AlumniTracerController::class, 'store'])->name('tracer.store');
 
-    // Career Timeline Routes
     Route::post('/profile/employment', [AlumniProfileController::class, 'storeEmployment'])->name('profile.employment.store');
     Route::delete('/profile/employment/{id}', [AlumniProfileController::class, 'destroyEmployment'])->name('profile.employment.destroy');
 });
 
+// Job Application Submission Route
 Route::middleware(['auth'])->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])->name('jobs.apply');
 
-/*
-|--------------------------------------------------------------------------
-| Alumni Portal: Event Details Route
-|--------------------------------------------------------------------------
-*/
-Route::get('/portal/events/{id}', function ($id) {
-    // Safely fetch the specific event from the database
-    $event = \DB::table('events')->where('id', $id)->first();
+// 🟢 SYSTEM B: The Dynamic Tracer Surveys Routes
+Route::middleware(['auth'])->prefix('portal')->group(function () {
     
-    // If someone types a fake ID, show a 404 page instead of crashing
-    if (!$event) {
-        abort(404, 'Event not found.');
-    }
-    
-    // Load the details view and pass the event data to it
-    return view('alumni.events.show', compact('event'));
+    Route::get('/tracer-surveys', function () {
+        // 1. Safely fetch the surveys
+        $surveys = \DB::table('surveys')->get(); 
+        
+        // 2. THE FIX: Temporarily set this to an empty array to prevent the database crash!
+        // Once you know the real name of your answers table (e.g., 'tracer_answers' or 'answers'), 
+        // you can query it here later to make the "Submitted" badge work.
+        $submittedIds = []; 
+            
+        return view('alumni.tracer_surveys.index', compact('surveys', 'submittedIds'));
+    })->name('tracer_surveys.index');
+
+    // These connect perfectly to your existing controller methods
+    Route::get('/tracer-surveys/{id}', [AlumniTracerController::class, 'show'])->name('tracer_surveys.show');
+    Route::post('/tracer-surveys/{id}', [AlumniTracerController::class, 'store'])->name('tracer_surveys.submit');
 });

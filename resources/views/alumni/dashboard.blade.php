@@ -83,7 +83,7 @@
                         <h5 class="fw-bold">Tracer Study</h5>
                         <p class="text-muted small mb-0">Help us improve by updating your status.</p>
                     </div>
-                    <a href="{{ isset($activeSurveyId) ? route('alumni.tracer.show', $activeSurveyId) : '#' }}" class="stretched-link"></a>
+                    <a href="{{ route('tracer_surveys.index') }}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
