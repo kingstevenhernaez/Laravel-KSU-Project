@@ -76,11 +76,15 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     
-    // Dashboards
+    // 🟢 TRACER STUDY (Native App Surveys)
     Route::get('/surveys', [SurveyController::class, 'index']);
+    Route::get('/surveys/{id}', [SurveyController::class, 'show']);
+    Route::post('/surveys/{id}', [SurveyController::class, 'store']);
+    
+    // 🟢 CAREER OPS (Jobs)
     Route::get('/jobs', [JobController::class, 'index']);
 
-    // 🟢 Fetch Upcoming Events for the Mobile App
+    // 🟢 UPCOMING EVENTS
     Route::get('/events', function () {
         // Make sure your database table is actually named 'events' and has 'title' and 'date' columns
         $events = \DB::table('events')
@@ -94,12 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
-    // Employment History (Duplicates Removed!)
+    // 🟢 EMPLOYMENT HISTORY TIMELINE
     Route::get('/employment-history', [EmploymentController::class, 'index']);
     Route::post('/employment-history', [EmploymentController::class, 'store']);
     Route::delete('/employment-history/{id}', [EmploymentController::class, 'destroy']);
     
-    // Profile & ID Card Integration
+    // 🟢 PROFILE & ID CARD
     Route::get('/my-profile', [AlumniProfileController::class, 'show']);
     Route::post('/profile/update', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
 });
