@@ -80,6 +80,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/surveys', [SurveyController::class, 'index']);
     Route::get('/jobs', [JobController::class, 'index']);
 
+    // 🟢 Fetch Upcoming Events for the Mobile App
+    Route::get('/events', function () {
+        // Make sure your database table is actually named 'events' and has 'title' and 'date' columns
+        $events = \DB::table('events')
+            ->where('date', '>=', now()) // Only show future events
+            ->orderBy('date', 'asc')
+            ->take(5) // Send the next 5 events
+            ->get();
+            
+        return response()->json([
+            'events' => $events
+        ]);
+    });
+
     // Employment History (Duplicates Removed!)
     Route::get('/employment-history', [EmploymentController::class, 'index']);
     Route::post('/employment-history', [EmploymentController::class, 'store']);
