@@ -205,18 +205,16 @@ Route::middleware(['auth'])->post('/portal/jobs/{id}/apply', [JobApplicationCont
 Route::middleware(['auth'])->prefix('portal')->group(function () {
     
     Route::get('/tracer-surveys', function () {
-        // 1. Safely fetch the surveys
         $surveys = \DB::table('surveys')->get(); 
         
-        // 2. THE FIX: Temporarily set this to an empty array to prevent the database crash!
-        // Once you know the real name of your answers table (e.g., 'tracer_answers' or 'answers'), 
-        // you can query it here later to make the "Submitted" badge work.
-        $submittedIds = []; 
+        // THE FIX: We now use the correct SurveyAnswer model to safely load the "Submitted" badges
+        $submittedIds = \App\Models\SurveyAnswer::where('user_id', Auth::id())
+            ->pluck('survey_id')
+            ->toArray();
             
         return view('alumni.tracer_surveys.index', compact('surveys', 'submittedIds'));
     })->name('tracer_surveys.index');
 
-    // These connect perfectly to your existing controller methods
     Route::get('/tracer-surveys/{id}', [AlumniTracerController::class, 'show'])->name('tracer_surveys.show');
     Route::post('/tracer-surveys/{id}', [AlumniTracerController::class, 'store'])->name('tracer_surveys.submit');
 });

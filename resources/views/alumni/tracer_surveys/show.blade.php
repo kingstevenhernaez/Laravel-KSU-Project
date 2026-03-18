@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.alumni')
 
 @push('title')
     {{ __('Tracer Survey') }}

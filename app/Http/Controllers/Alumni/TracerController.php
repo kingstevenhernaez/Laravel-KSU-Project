@@ -18,7 +18,6 @@ class TracerController extends Controller
         // 1. Fetch the survey and its questions
         $survey = Survey::with('questions')->findOrFail($id);
 
-        // 🟢 SECURITY FIX: Prevent URL guessing. Verify the user is actually allowed to take this survey.
         $courseMismatch = !empty($survey->target_course) && $survey->target_course != $user->course;
         $batchMismatch = !empty($survey->target_batch) && $survey->target_batch != $user->batch;
 
@@ -26,17 +25,18 @@ class TracerController extends Controller
             return redirect()->route('alumni.dashboard')->with('error', 'This specific survey is not intended for your program or batch.');
         }
 
-        // 2. Check if the user has already answered this survey
-        $hasAnswered = SurveyAnswer::where('survey_id', $id)
+        // 2. THE FIX: Fetch their previous answers from the database!
+        // This creates an array where the key is the Question ID, and the value is their Answer.
+        $previousAnswers = SurveyAnswer::where('survey_id', $id)
                                    ->where('user_id', $user->id)
-                                   ->exists();
+                                   ->pluck('answer_text', 'question_id')
+                                   ->toArray();
 
-        // 3. If already answered, prevent them from answering again
-        if ($hasAnswered) {
-            return redirect()->route('alumni.dashboard')->with('success', 'You have already completed this Tracer Study. Thank you!');
-        }
+        // 3. Check if they have answered it based on whether we found data
+        $hasAnswered = !empty($previousAnswers);
 
-        return view('alumni.tracer.show', compact('survey'));
+        // 4. DO NOT redirect. Pass the saved answers to your beautiful form instead!
+        return view('alumni.tracer.show', compact('survey', 'hasAnswered', 'previousAnswers'));
     }
 
     // Process and save the alumni's answers
@@ -45,21 +45,13 @@ class TracerController extends Controller
         $survey = Survey::findOrFail($id);
         $userId = Auth::id();
 
-        // Ensure they haven't submitted already (double-submit protection)
         if (SurveyAnswer::where('survey_id', $id)->where('user_id', $userId)->exists()) {
-            return redirect()->route('alumni.dashboard')->with('error', 'Survey already submitted.');
+            return redirect()->route('tracer_surveys.index')->with('error', 'Survey already submitted.');
         }
 
-        // Loop through the submitted answers and save them
         if ($request->has('answers')) {
             foreach ($request->answers as $questionId => $answerData) {
-                
-                // If it's a checkbox array, convert to comma-separated string
-                if (is_array($answerData)) {
-                    $answerText = implode(', ', $answerData);
-                } else {
-                    $answerText = $answerData;
-                }
+                $answerText = is_array($answerData) ? implode(', ', $answerData) : $answerData;
 
                 if (!empty($answerText)) {
                     SurveyAnswer::create([
@@ -72,6 +64,6 @@ class TracerController extends Controller
             }
         }
 
-        return redirect()->route('alumni.dashboard')->with('success', 'Thank you for updating your Tracer Study information!');
+        return redirect()->route('tracer_surveys.index')->with('success', 'Thank you for updating your Tracer Study information!');
     }
 }
