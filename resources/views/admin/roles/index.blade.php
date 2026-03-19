@@ -63,22 +63,31 @@
                             </td>
                             <td class="text-muted">{{ $user->email }}</td>
                             
-                            <td style="max-width: 300px;">
+                          <td style="max-width: 300px;">
                                 @php
                                     $raw = $user->role_name ?? '[]';
                                     $decoded = json_decode($raw, true);
                                     $userRoles = is_array($decoded) ? $decoded : [$raw];
                                 @endphp
 
-                                @if(in_array('super_admin', $userRoles))
-                                    <span class="badge bg-danger px-3 py-2 rounded-pill text-uppercase fw-bold" style="font-size: 0.7rem;">
+                                {{-- 🟢 NEW: Check if this is the Registrar --}}
+                                @if($user->role == 3)
+                                    <span class="badge bg-info text-dark px-3 py-2 rounded-pill text-uppercase fw-bold shadow-sm" style="font-size: 0.7rem;">
+                                        <i class="fas fa-file-signature me-1"></i> University Registrar
+                                    </span>
+
+                                {{-- Super Admin Check --}}
+                                @elseif(in_array('super_admin', $userRoles))
+                                    <span class="badge bg-danger px-3 py-2 rounded-pill text-uppercase fw-bold shadow-sm" style="font-size: 0.7rem;">
                                         <i class="fas fa-star me-1"></i> Super Admin
                                     </span>
+
+                                {{-- Standard Granular Admin Check --}}
                                 @else
                                     <div class="d-flex flex-wrap gap-1">
                                         @foreach($userRoles as $role)
                                             @if(!empty($role) && $role !== '[]')
-                                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-2 fw-bold" style="font-size: 0.65rem;">
+                                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 rounded-2 fw-bold border border-success border-opacity-25" style="font-size: 0.65rem;">
                                                 {{ ucwords(str_replace('_', ' ', $role)) }}
                                             </span>
                                             @endif

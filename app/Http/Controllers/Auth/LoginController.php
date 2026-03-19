@@ -12,7 +12,6 @@ class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    // 🟢 FIX 3: Default redirect (fallback)
     protected $redirectTo = '/';
 
     public function __construct()
@@ -50,14 +49,20 @@ class LoginController extends Controller
                     ->with('error', 'Your account is currently deactivated. Please contact the admin.');
             }
 
-            // 4. 🟢 REDIRECT LOGIC
+            // 4. 🟢 REDIRECT LOGIC (INTEGRATED ROLE 3!)
+            
             // Role 1: Admin -> Admin Dashboard
             if ($user->role == 1) {
                 return redirect()->route('admin.dashboard');
             }
 
+            // Role 3: Registrar -> Registrar Dashboard
+            if ($user->role == 3) {
+                return redirect()->route('registrar.dashboard');
+            }
+
             // Role 2: Alumni -> Alumni Dashboard
-            if ($user->role == 2) { // Assuming 2 is Alumni
+            if ($user->role == 2) { 
                 return redirect()->route('alumni.dashboard');
             }
             

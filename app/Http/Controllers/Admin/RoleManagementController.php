@@ -28,9 +28,13 @@ class RoleManagementController extends Controller
             'last_name'  => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:8|confirmed',
-            'role_name'  => 'required|array', 
+            'role_type'  => 'required|in:1,3', // 🟢 NEW: 1 = Admin, 3 = Registrar
+            'role_name'  => 'nullable|array', 
             'role_name.*'=> 'string'
         ]);
+
+        // 🟢 NEW: If Registrar is selected, hardcode the role array
+        $assignedRoles = $data['role_type'] == 3 ? ['registrar'] : ($data['role_name'] ?? []);
 
         User::create([
             'uuid'       => Str::uuid(), 
@@ -39,23 +43,22 @@ class RoleManagementController extends Controller
             'name'       => $data['first_name'] . ' ' . $data['last_name'],
             'email'      => $data['email'],
             'password'   => Hash::make($data['password']),
-            'role'       => 1,
-            'role_name'  => json_encode($data['role_name']),
+            'role'       => $data['role_type'], // 🟢 Assign exact role number
+            'role_name'  => json_encode($assignedRoles),
+            'status'     => 1, // Auto-activate
             'mobile'     => '09' . rand(100000000, 999999999), 
             'email_verified_at' => now(),
         ]);
 
-        return redirect()->route('admin.roles.index')->with('success', 'New Staff Account Created with Specific Privileges!');
+        return redirect()->route('admin.roles.index')->with('success', 'New Staff Account Created Successfully!');
     }
 
-    // 🟢 NEW: Edit View
     public function edit($id)
     {
         $user = User::findOrFail($id);
         return view('admin.roles.edit', compact('user'));
     }
 
-    // 🟢 NEW: Update Logic
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -63,23 +66,26 @@ class RoleManagementController extends Controller
         $data = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
-            'email'      => 'required|email|unique:users,email,'.$id, // Ignores current user's email
-            'role_name'  => 'required|array',
+            'email'      => 'required|email|unique:users,email,'.$id,
+            'role_type'  => 'required|in:1,3', // 🟢 NEW
+            'role_name'  => 'nullable|array',
             'role_name.*'=> 'string'
         ]);
+
+        $assignedRoles = $data['role_type'] == 3 ? ['registrar'] : ($data['role_name'] ?? []);
 
         $user->update([
             'first_name' => $data['first_name'],
             'last_name'  => $data['last_name'],
             'name'       => $data['first_name'] . ' ' . $data['last_name'],
             'email'      => $data['email'],
-            'role_name'  => json_encode($data['role_name']),
+            'role'       => $data['role_type'], // 🟢 Update role number
+            'role_name'  => json_encode($assignedRoles),
         ]);
 
         return redirect()->route('admin.roles.index')->with('success', 'Staff Account Updated Successfully!');
     }
 
-    // 🟢 NEW: Update Password Logic
     public function updatePassword(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -95,12 +101,10 @@ class RoleManagementController extends Controller
         return back()->with('success', 'Password updated successfully for ' . $user->name);
     }
 
-    // 🟢 NEW: Delete Logic
     public function destroy($id)
     {
         $user = User::findOrFail($id);
 
-        // Prevent Super Admin from deleting themselves accidentally
         if (auth()->id() == $user->id) {
             return back()->with('error', 'You cannot delete your own active account!');
         }

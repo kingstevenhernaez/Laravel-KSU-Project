@@ -26,8 +26,9 @@
         </div>
     </div>
 
-    {{-- Stats Row --}}
+    {{-- Stats Row (🟢 FIXED: Everything is safely inside this single Row) --}}
     <div class="row g-4 mb-4 align-items-stretch">
+        
         {{-- Card 1: Alumni ID --}}
         <div class="col-md-4">
             <div class="card bg-success text-white h-100 shadow-sm border-0 position-relative overflow-hidden">
@@ -87,7 +88,37 @@
                 </div>
             </div>
         </div>
-    </div>
+
+        {{-- 🟢 Card 4: REGISTRAR DOCUMENT REQUEST (Safely inside the grid!) --}}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4 border-top border-info border-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
+                            <i class="fas fa-file-signature fa-xl"></i>
+                        </div>
+                        <span class="badge bg-info text-dark shadow-sm">Registrar's Office</span>
+                    </div>
+                    
+                    <h5 class="fw-bold text-dark mb-2">Request Documents</h5>
+                    
+                    <p class="text-muted small mb-4" style="line-height: 1.5;">
+                        Need your OTR or Diploma? Request official records here. <br><br>
+                        <span class="text-info border-start border-2 border-info ps-2 d-block">
+                            <strong>Note:</strong> All requests are routed to and processed directly by the <strong>KSU Registrar's Office</strong>, not the Alumni Center.
+                        </span>
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <a href="{{ route('alumni.documents.index') }}" class="btn btn-outline-info w-100 fw-bold rounded-pill">
+                            Go to Registrar Portal <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div> {{-- END OF STATS ROW --}}
 
     {{-- Main Content Row --}}
     <div class="row g-4">
