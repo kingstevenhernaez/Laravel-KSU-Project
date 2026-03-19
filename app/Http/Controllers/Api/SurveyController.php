@@ -9,7 +9,7 @@ use App\Models\SurveyAnswer;
 
 class SurveyController extends Controller
 {
-    // Fetches the list of surveys for the mobile dashboard
+ // Fetches the list of surveys for the mobile dashboard
     public function index(Request $request)
     {
         $user = $request->user();
@@ -17,7 +17,7 @@ class SurveyController extends Controller
         // 1. Fetch ALL active surveys first
         $allSurveys = Survey::where('is_active', 1)->latest()->get();
         
-        // 2. Safely filter them using PHP to avoid strict SQL NULL/Empty bugs
+        // 2. Safely filter them using PHP 
         $filteredSurveys = $allSurveys->filter(function($survey) use ($user) {
             $courseMatch = empty($survey->target_course) || $survey->target_course == $user->course;
             $batchMatch = empty($survey->target_batch) || $survey->target_batch == $user->batch;
@@ -25,7 +25,7 @@ class SurveyController extends Controller
             return $courseMatch && $batchMatch;
         });
 
-        // 3. Map the allowed surveys and check if the user has answered them
+        // 3. Map the allowed surveys
         $surveyData = $filteredSurveys->map(function ($survey) use ($user) {
             $hasAnswered = SurveyAnswer::where('survey_id', $survey->id)
                                        ->where('user_id', $user->id)
@@ -36,9 +36,12 @@ class SurveyController extends Controller
                 'description' => $survey->description,
                 'is_submitted' => $hasAnswered
             ];
-        })->values(); // Reset the array index for the Flutter JSON parser
+        })->values();
 
-        return response()->json($surveyData);
+        // 🟢 THE FIX: We wrap the data in a 'surveys' object so Flutter can find it!
+        return response()->json([
+            'surveys' => $surveyData
+        ]);
     }
 
     // Fetches a specific survey, its questions, and previous answers
