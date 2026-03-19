@@ -47,10 +47,10 @@ Route::post('/claim-account/register', [ClaimAccountController::class, 'register
 
 Auth::routes();
 
+// 🟢 THE FIX: We added ->name('register') so the homepage buttons don't crash!
 Route::get('/register', function() {
     return redirect()->route('claim.account');
-});
-
+})->name('register');
 Route::get('/home', function() { 
     if(!Auth::check()) {
         return redirect('/login');
