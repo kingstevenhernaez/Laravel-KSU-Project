@@ -84,6 +84,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // 🟢 CAREER OPS (Jobs)
     Route::get('/jobs', [JobController::class, 'index']);
 
+    // 🟢 IN-APP NOTIFICATIONS
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+
     // 🟢 UPCOMING EVENTS
     Route::get('/events', function () {
         // Make sure your database table is actually named 'events' and has 'title' and 'date' columns
