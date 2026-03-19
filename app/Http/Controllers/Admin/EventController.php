@@ -13,26 +13,17 @@ use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-    /**
-     * List all events with pagination
-     */
     public function index()
     {
         $events = Event::latest()->paginate(10); 
         return view('admin.events.index', compact('events'));
     }
 
-    /**
-     * Show the form to create a new event
-     */
     public function create()
     {
         return view('admin.events.create');
     }
 
-    /**
-     * Store the new event in the database
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -42,7 +33,6 @@ class EventController extends Controller
             'date'        => 'required', 
         ]);
 
-        // Creating the event with required fields for your migration
         $event = Event::create([
             'title'             => $request->title,
             'slug'              => Str::slug($request->title) . '-' . time(),
@@ -50,29 +40,27 @@ class EventController extends Controller
             'location'          => $request->location,
             'date'              => $request->date,
             'user_id'           => Auth::id(),
-            'event_category_id' => 1, // Default category
-            'thumbnail'         => 0, // Default integer value
-            'status'            => 1  // Assuming 1 for Active/Pending
+            'event_category_id' => 1, 
+            'thumbnail'         => 0, 
+            'status'            => 1  
         ]);
 
-        // Note: If you have the EventObserver registered, 
-        // it will handle the alumni emails automatically.
+        // [NEW] Broadcast Notification to all Alumni
+        $alumni = \App\Models\User::where('role', 2)->where('status', 1)->get();
+        $title = "Upcoming University Event";
+        $message = "Mark your calendar for: " . $request->title;
+        
+        \Illuminate\Support\Facades\Notification::send($alumni, new \App\Notifications\AppNotification($title, $message, 'event'));
 
         return redirect()->route('admin.events.index')->with('success', 'Event created successfully!');
     }
 
-    /**
-     * Show the form to edit an existing event
-     */
     public function edit($id)
     {
         $event = Event::findOrFail($id);
         return view('admin.events.edit', compact('event'));
     }
 
-    /**
-     * Update the event in the database
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -85,13 +73,11 @@ class EventController extends Controller
         $event = Event::findOrFail($id);
         
         $event->title = $request->title;
-        // Update slug only if title changes, or maintain original
         $event->slug = Str::slug($request->title) . '-' . $event->id;
         $event->date = $request->date;
         $event->location = $request->location;
         $event->description = $request->description;
         
-        // Handle status if your form includes it (1 for Active, 0 for Draft)
         if ($request->has('status')) {
             $event->status = $request->status;
         }
@@ -101,9 +87,6 @@ class EventController extends Controller
         return redirect()->route('admin.events.index')->with('success', 'Event updated successfully!');
     }
 
-    /**
-     * Remove the event from the database
-     */
     public function destroy($id)
     {
         $event = Event::findOrFail($id);
