@@ -47,6 +47,10 @@ Route::post('/claim-account/register', [ClaimAccountController::class, 'register
 
 Auth::routes();
 
+Route::get('/register', function() {
+    return redirect()->route('claim.account');
+});
+
 Route::get('/home', function() { 
     if(!Auth::check()) {
         return redirect('/login');
