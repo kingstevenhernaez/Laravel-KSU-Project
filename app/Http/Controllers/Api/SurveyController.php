@@ -9,34 +9,39 @@ use App\Models\SurveyAnswer;
 
 class SurveyController extends Controller
 {
-    // Fetches the list of surveys for the dashboard
+    // Fetches the list of surveys for the mobile dashboard
     public function index(Request $request)
     {
         $user = $request->user();
-        $surveys = Survey::where('is_active', 1)
-            ->where(function ($query) use ($user) {
-                $query->whereNull('target_course')->orWhere('target_course', '')->orWhere('target_course', $user->course);
-            })
-            ->where(function ($query) use ($user) {
-                $query->whereNull('target_batch')->orWhere('target_batch', '')->orWhere('target_batch', $user->batch);
-            })
-            ->latest()
-            ->get();
+        
+        // 1. Fetch ALL active surveys first
+        $allSurveys = Survey::where('is_active', 1)->latest()->get();
+        
+        // 2. Safely filter them using PHP to avoid strict SQL NULL/Empty bugs
+        $filteredSurveys = $allSurveys->filter(function($survey) use ($user) {
+            $courseMatch = empty($survey->target_course) || $survey->target_course == $user->course;
+            $batchMatch = empty($survey->target_batch) || $survey->target_batch == $user->batch;
+            
+            return $courseMatch && $batchMatch;
+        });
 
-        $surveyData = $surveys->map(function ($survey) use ($user) {
-            $hasAnswered = SurveyAnswer::where('survey_id', $survey->id)->where('user_id', $user->id)->exists();
+        // 3. Map the allowed surveys and check if the user has answered them
+        $surveyData = $filteredSurveys->map(function ($survey) use ($user) {
+            $hasAnswered = SurveyAnswer::where('survey_id', $survey->id)
+                                       ->where('user_id', $user->id)
+                                       ->exists();
             return [
                 'id' => $survey->id,
                 'title' => $survey->title,
                 'description' => $survey->description,
                 'is_submitted' => $hasAnswered
             ];
-        });
+        })->values(); // Reset the array index for the Flutter JSON parser
 
         return response()->json($surveyData);
     }
 
-    // 🟢 NEW: Fetches a specific survey, its questions, and previous answers
+    // Fetches a specific survey, its questions, and previous answers
     public function show(Request $request, $id)
     {
         $user = $request->user();
@@ -49,12 +54,12 @@ class SurveyController extends Controller
 
         return response()->json([
             'survey' => $survey,
-            'previous_answers' => (object) $previousAnswers, // Cast to object so Flutter reads it correctly
+            'previous_answers' => (object) $previousAnswers, 
             'has_answered' => !empty($previousAnswers)
         ]);
     }
 
-    // 🟢 NEW: Saves the answers coming from the mobile app
+    // Saves the answers coming from the mobile app
     public function store(Request $request, $id)
     {
         $userId = $request->user()->id;
