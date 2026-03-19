@@ -42,20 +42,25 @@ class DocumentController extends Controller
         return view('registrar.dashboard', compact('requests', 'pendingCount', 'processingCount', 'readyCount', 'status'));
     }
 
-  public function updateStatus(Request $request, $id)
+public function updateStatus(Request $request, $id)
     {
-        // ... your existing validation and save code ...
+        // 1. Fetch the exact document request from the database
+        $docRequest = \App\Models\DocumentRequest::findOrFail($id);
+
+        // 2. Update the status
         $docRequest->status = $request->status;
         $docRequest->save();
 
-        // 🟢 NEW: Trigger the Universal Notification!
+        // 3. Trigger the Universal Notification!
         $title = "Document Request Update";
         $message = "Your request for {$docRequest->document_type} is now: {$request->status}.";
         
-        // Send it to the specific alumni who requested it
-        $docRequest->user->notify(new \App\Notifications\AppNotification($title, $message, 'document'));
+        // 4. Send the notification to the specific alumni who requested it
+        if ($docRequest->user) {
+            $docRequest->user->notify(new \App\Notifications\AppNotification($title, $message, 'document'));
+        }
 
-        return back()->with('success', 'Document status updated...');
+        return back()->with('success', 'Document status updated successfully and alumni notified!');
     }
 
  // 🟢 UPDATED: Advanced Analytics and Filtering
