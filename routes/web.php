@@ -246,4 +246,6 @@ Route::middleware(['auth'])->prefix('registrar')->name('registrar.')->group(func
     Route::post('/documents/{id}/status', [\App\Http\Controllers\Registrar\DocumentController::class, 'updateStatus'])->name('documents.status');
     Route::get('/reports', [\App\Http\Controllers\Registrar\DocumentController::class, 'reports'])->name('reports');
     Route::get('/reports/print', [\App\Http\Controllers\Registrar\DocumentController::class, 'printReport'])->name('reports.print');
+    Route::get('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'index']);
+    Route::post('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'store']);
 });
