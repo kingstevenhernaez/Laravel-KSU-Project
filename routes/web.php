@@ -47,7 +47,6 @@ Route::post('/claim-account/register', [ClaimAccountController::class, 'register
 
 Auth::routes();
 
-// 🟢 INTEGRATED: The updated Home Route logic handling Role 1, Role 3, and Alumni!
 Route::get('/home', function() { 
     if(!Auth::check()) {
         return redirect('/login');
@@ -76,7 +75,6 @@ Route::get('/news/{slug}', function ($slug) {
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // DASHBOARD
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $verifiedCount = User::where('status', 1)->count();
         $pendingCount  = User::where('status', 0)->count(); 
@@ -199,14 +197,14 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
     Route::post('/profile/password', [AlumniProfileController::class, 'changePassword'])->name('profile.password');
     Route::delete('/profile/photo', [AlumniProfileController::class, 'removePhoto'])->name('profile.remove_photo');
 
-    // 🟢 SYSTEM A: The Original Static Tracer Routes
+    // SYSTEM A: The Original Static Tracer Routes
     Route::get('/tracer/{id}', [AlumniTracerController::class, 'show'])->name('tracer.show');
     Route::post('/tracer/{id}', [AlumniTracerController::class, 'store'])->name('tracer.store');
 
     Route::post('/profile/employment', [AlumniProfileController::class, 'storeEmployment'])->name('profile.employment.store');
     Route::delete('/profile/employment/{id}', [AlumniProfileController::class, 'destroyEmployment'])->name('profile.employment.destroy');
 
-    // 🟢 ALUMNI DOCUMENT REQUESTS (Correctly placed here)
+    // ALUMNI DOCUMENT REQUESTS
     Route::get('/documents', [\App\Http\Controllers\Alumni\DocumentRequestController::class, 'index'])->name('documents.index');
     Route::get('/documents/create', [\App\Http\Controllers\Alumni\DocumentRequestController::class, 'create'])->name('documents.create');
     Route::post('/documents', [\App\Http\Controllers\Alumni\DocumentRequestController::class, 'store'])->name('documents.store');
@@ -215,24 +213,18 @@ Route::middleware(['auth'])->prefix('portal')->name('alumni.')->group(function (
 // Job Application Submission Route
 Route::middleware(['auth'])->post('/portal/jobs/{id}/apply', [JobApplicationController::class, 'apply'])->name('jobs.apply');
 
-// 🟢 SYSTEM B: The Dynamic Tracer Surveys Routes
+// SYSTEM B: The Dynamic Tracer Surveys Routes
 Route::middleware(['auth'])->prefix('portal')->group(function () {
-    
     Route::get('/tracer-surveys', function () {
         $surveys = \DB::table('surveys')->get(); 
-        
-        // We now use the correct SurveyAnswer model to safely load the "Submitted" badges
         $submittedIds = \App\Models\SurveyAnswer::where('user_id', Auth::id())
             ->pluck('survey_id')
             ->toArray();
-            
         return view('alumni.tracer_surveys.index', compact('surveys', 'submittedIds'));
     })->name('tracer_surveys.index');
 
     Route::get('/tracer-surveys/{id}', [AlumniTracerController::class, 'show'])->name('tracer_surveys.show');
     Route::post('/tracer-surveys/{id}', [AlumniTracerController::class, 'store'])->name('tracer_surveys.submit');
-
-    // DELETED the duplicated document routes from here!
 });
 
 /*
@@ -240,12 +232,10 @@ Route::middleware(['auth'])->prefix('portal')->group(function () {
 | 4. REGISTRAR ROUTES (ROLE 3)
 |--------------------------------------------------------------------------
 */
-// 🟢 INTEGRATED: The necessary routes for the Registrar Dashboard
+// INTEGRATED: The necessary routes for the Registrar Dashboard
 Route::middleware(['auth'])->prefix('registrar')->name('registrar.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Registrar\DocumentController::class, 'index'])->name('dashboard');
     Route::post('/documents/{id}/status', [\App\Http\Controllers\Registrar\DocumentController::class, 'updateStatus'])->name('documents.status');
     Route::get('/reports', [\App\Http\Controllers\Registrar\DocumentController::class, 'reports'])->name('reports');
     Route::get('/reports/print', [\App\Http\Controllers\Registrar\DocumentController::class, 'printReport'])->name('reports.print');
-    Route::get('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'index']);
-    Route::post('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'store']);
 });

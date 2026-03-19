@@ -106,4 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // 🟢 PROFILE & ID CARD
     Route::get('/my-profile', [AlumniProfileController::class, 'show']);
     Route::post('/profile/update', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
+
+    // 🟢 MOBILE API: REGISTRAR DOCUMENT REQUESTS (THESE WERE MISSING!)
+    Route::get('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'index']);
+    Route::post('/documents', [\App\Http\Controllers\Api\DocumentRequestController::class, 'store']);
 });
