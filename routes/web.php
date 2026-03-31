@@ -51,6 +51,7 @@ Auth::routes();
 Route::get('/register', function() {
     return redirect()->route('claim.account');
 })->name('register');
+
 Route::get('/home', function() { 
     if(!Auth::check()) {
         return redirect('/login');
