@@ -51,7 +51,13 @@
                             <td>{{ $record->course ?? 'N/A' }}</td>
                             <td><span class="badge bg-light text-dark border">{{ $record->year_graduated ?? 'N/A' }}</span></td>
                             {{-- 🟢 FIX: Safely check if birthdate exists before formatting --}}
-                            <td>{{ $record->birthdate ? \Carbon\Carbon::parse($record->birthdate)->format('M d, Y') : 'N/A' }}</td>
+                            <td>
+    @if($record->birthdate)
+        <span class="text-muted"><i class="fas fa-lock"></i> Hidden</span>
+    @else
+        N/A
+    @endif
+</td>
                             <td class="text-center">
                                 <span class="badge bg-secondary px-2 py-1"><i class="fas fa-hourglass-half me-1"></i> Unclaimed</span>
                             </td>
