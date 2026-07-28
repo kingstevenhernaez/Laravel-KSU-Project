@@ -50,14 +50,16 @@
                             <td class="fw-bold text-dark">{{ $record->last_name }}, {{ $record->first_name }}</td>
                             <td>{{ $record->course ?? 'N/A' }}</td>
                             <td><span class="badge bg-light text-dark border">{{ $record->year_graduated ?? 'N/A' }}</span></td>
-                            {{-- 🟢 FIX: Safely check if birthdate exists before formatting --}}
+                            
+                            {{-- 🟢 PRIVACY FIX: Mask the date if it exists, otherwise show N/A --}}
                             <td>
-    @if($record->birthdate)
-        <span class="text-muted"><i class="fas fa-lock"></i> Hidden</span>
-    @else
-        N/A
-    @endif
-</td>
+                                @if($record->birthdate)
+                                    <span class="text-muted"><i class="fas fa-lock small me-1"></i> Hidden</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            
                             <td class="text-center">
                                 <span class="badge bg-secondary px-2 py-1"><i class="fas fa-hourglass-half me-1"></i> Unclaimed</span>
                             </td>
