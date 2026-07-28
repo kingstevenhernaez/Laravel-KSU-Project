@@ -27,19 +27,28 @@ class ClaimAccountController extends Controller
             'birthdate'  => 'required|date'
         ]);
 
-        $record = MisAlumniRecord::where('student_id', $request->student_id)
-                                 ->where('birthdate', $request->birthdate)
-                                 ->first();
+        // 🟢 FIX 1: Only search by Student ID first to bypass strict date checks
+        $record = MisAlumniRecord::where('student_id', $request->student_id)->first();
 
         if (!$record) {
             return redirect()->route('claim.account')->with('error', 'No matching record found in the MIS database. Please check your details.');
+        }
+
+        // 🟢 FIX 2: If the database HAS a date, make sure it matches. 
+        if ($record->birthdate !== null && $record->birthdate !== $request->birthdate) {
+            return redirect()->route('claim.account')->with('error', 'The birthdate does not match our records.');
         }
 
         if ($record->is_claimed) {
             return redirect()->route('login')->with('error', 'This account has already been claimed. Please log in.');
         }
 
-        // 🟢 If found, show the registration form!
+        // 🟢 FIX 3: If the database date was NULL, save the real date the user just typed!
+        if ($record->birthdate === null) {
+            $record->update(['birthdate' => $request->birthdate]);
+        }
+
+        // If found (and date passes), show the registration form!
         return view('auth.claim_register', compact('record'));
     }
 
@@ -51,7 +60,7 @@ class ClaimAccountController extends Controller
             'email'     => 'required|email|unique:users,email',
             'mobile'    => 'required|string|unique:users,mobile',
             'password'  => 'required|min:8|confirmed',
-            // 🟢 Single File Validation
+            // Single File Validation
             'valid_id'  => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048', 
         ]);
 
@@ -77,7 +86,7 @@ class ClaimAccountController extends Controller
             'email'          => $request->email,
             'mobile'         => $request->mobile,
             'password'       => Hash::make($request->password),
-            'birthdate'      => $record->birthdate,
+            'birthdate'      => $record->birthdate, // This now safely pulls the correct date!
             'course'         => $record->course,
             'year_graduated' => $record->year_graduated,
             'role'           => 2, // Alumni
@@ -93,7 +102,7 @@ class ClaimAccountController extends Controller
             'user_id'    => $user->id
         ]);
 
-        // 🟢 THE FIX: Trigger Laravel's built-in email verification system
+        // Trigger Laravel's built-in email verification system
         event(new Registered($user));
         
         Auth::login($user);
