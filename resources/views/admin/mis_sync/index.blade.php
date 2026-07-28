@@ -139,7 +139,7 @@
                                 <span class="d-block">{{ $record->course }}</span>
                                 <small class="text-muted">Class of {{ $record->year_graduated }}</small>
                             </td>
-                            <td>{{ \Carbon\Carbon::parse($record->birthdate)->format('M d, Y') }}</td>
+                            <td>{{ $record->birthdate ? \Carbon\Carbon::parse($record->birthdate)->format('M d, Y') : 'N/A' }}</td>
                             <td>
                                 @if($record->is_claimed)
                                     <span class="badge bg-success"><i class="fas fa-check me-1"></i> Claimed</span>
