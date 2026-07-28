@@ -49,10 +49,10 @@ class MisSyncController extends Controller
                     $lastName = trim($nameParts[0] ?? '');
                     $firstName = isset($nameParts[1]) ? trim($nameParts[1]) : '';
 
-                    // 🟢 THE FIX: Look for the real birthdate from the API.
-                    // APIs usually name this field 'birthdate', 'dob', or 'date_of_birth'
+                    // 🟢 FIX: Ensure empty API values are set to strictly null
                     $apiBirthdate = $data['birthdate'] ?? ($data['dob'] ?? ($data['date_of_birth'] ?? null));
-                    $realBirthdate = $apiBirthdate ? date('Y-m-d', strtotime($apiBirthdate)) : null;
+                    // 🟢 The strict empty() check prevents invalid/blank dates from being parsed
+                    $realBirthdate = !empty($apiBirthdate) ? date('Y-m-d', strtotime($apiBirthdate)) : null;
 
                     MisAlumniRecord::updateOrCreate(
                         ['student_id' => $data['id_number'] ?? $idNumber], 
@@ -62,7 +62,7 @@ class MisSyncController extends Controller
                             'course'         => $data['course_code'] ?? null,
                             'year_graduated' => $data['year'] ?? null,
                             
-                            // 🟢 THE FIX: Save the real birthdate
+                            // 🟢 Save the safely parsed or null birthdate
                             'birthdate'      => $realBirthdate, 
                             
                             'is_claimed'     => false
@@ -119,7 +119,7 @@ class MisSyncController extends Controller
                         'last_name'      => $data['last_name'] ?? 'Unknown',
                         'course'         => $data['course'] ?? null,
                         'year_graduated' => $data['year_graduated'] ?? null,
-                        // 🟢 THE FIX: Strictly parse the CSV's birthdate column, no more 2000-01-01
+                        // 🟢 Ensure empty CSV birthdate values are set to null
                         'birthdate'      => !empty($data['birthdate']) ? date('Y-m-d', strtotime($data['birthdate'])) : null,
                     ]
                 );
